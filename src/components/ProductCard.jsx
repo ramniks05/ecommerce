@@ -35,42 +35,42 @@ const ProductCard = ({ product }) => {
         <img
           src={product.images[0]}
           alt={product.name}
-          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-48 sm:h-56 md:h-64 object-cover group-hover:scale-110 transition-transform duration-300"
         />
         
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
           {product.isNew && (
-            <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded">
+            <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded shadow-md">
               NEW
             </span>
           )}
           {product.discount > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded">
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded shadow-md">
               -{product.discount}%
             </span>
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Quick Actions - Always visible on mobile, hover on desktop */}
+        <div className="absolute top-2 right-2 flex flex-col gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
           <button
             onClick={handleWishlistToggle}
-            className="bg-white rounded-full p-2 shadow-md hover:bg-primary-50 transition-colors"
+            className="bg-white rounded-full p-2 md:p-2.5 shadow-lg hover:bg-primary-50 transition-colors active:scale-95"
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             {inWishlist ? (
-              <FaHeart className="text-red-500" size={18} />
+              <FaHeart className="text-red-500" size={16} />
             ) : (
-              <FiHeart size={18} />
+              <FiHeart size={16} />
             )}
           </button>
           <button
             onClick={handleAddToCart}
-            className="bg-white rounded-full p-2 shadow-md hover:bg-primary-50 transition-colors"
+            className="bg-white rounded-full p-2 md:p-2.5 shadow-lg hover:bg-primary-50 transition-colors active:scale-95"
             aria-label="Add to cart"
           >
-            <FiShoppingCart size={18} />
+            <FiShoppingCart size={16} />
           </button>
         </div>
 
@@ -84,24 +84,24 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
-      <div className="p-4">
-        <p className="text-sm text-primary-600 font-medium mb-1">{product.brandName}</p>
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+      <div className="p-3 md:p-4">
+        <p className="text-xs md:text-sm text-primary-600 font-medium mb-1">{product.brandName}</p>
+        <h3 className="font-semibold text-sm md:text-base text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
           {product.name}
         </h3>
         
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center">
-            <span className="text-yellow-400 text-sm">★</span>
-            <span className="text-sm text-gray-600 ml-1">{product.rating}</span>
+            <span className="text-yellow-400 text-xs md:text-sm">★</span>
+            <span className="text-xs md:text-sm text-gray-600 ml-1">{product.rating}</span>
           </div>
-          <span className="text-sm text-gray-400">({product.reviewCount})</span>
+          <span className="text-xs md:text-sm text-gray-400">({product.reviewCount})</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900">₹{product.price}</span>
+          <span className="text-lg md:text-xl font-bold text-gray-900">₹{product.price}</span>
           {product.originalPrice && (
-            <span className="text-sm text-gray-400 line-through">
+            <span className="text-xs md:text-sm text-gray-400 line-through">
               ₹{product.originalPrice}
             </span>
           )}

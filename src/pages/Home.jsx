@@ -58,18 +58,18 @@ const Home = () => {
       </section>
 
       {/* Featured Brands */}
-      <section className="py-16 bg-white">
+      <section className="py-8 md:py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Brands</h2>
-              <p className="text-gray-600">Discover our premium brand partners</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">Featured Brands</h2>
+              <p className="text-sm md:text-base text-gray-600">Discover our premium brand partners</p>
             </div>
-            <Link to="/brands" className="text-primary-600 font-semibold hover:text-primary-700">
+            <Link to="/brands" className="text-sm md:text-base text-primary-600 font-semibold hover:text-primary-700 whitespace-nowrap">
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
             {brands.map(brand => (
               <BrandCard key={brand.id} brand={brand} />
             ))}
@@ -78,13 +78,13 @@ const Home = () => {
       </section>
 
       {/* Categories */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-8 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Shop by Category</h2>
-            <p className="text-gray-600">Find what you're looking for</p>
+          <div className="mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">Shop by Category</h2>
+            <p className="text-sm md:text-base text-gray-600">Find what you're looking for</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
             {categories.map(category => (
               <Link
                 key={category.id}
@@ -108,18 +108,18 @@ const Home = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="py-16 bg-white">
+      <section className="py-8 md:py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Products</h2>
-              <p className="text-gray-600">Hand-picked products just for you</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">Featured Products</h2>
+              <p className="text-sm md:text-base text-gray-600">Hand-picked products just for you</p>
             </div>
-            <Link to="/products" className="text-primary-600 font-semibold hover:text-primary-700">
+            <Link to="/products" className="text-sm md:text-base text-primary-600 font-semibold hover:text-primary-700 whitespace-nowrap">
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {featuredProducts.slice(0, 8).map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -128,18 +128,18 @@ const Home = () => {
       </section>
 
       {/* New Arrivals */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-8 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">New Arrivals</h2>
-              <p className="text-gray-600">Check out our latest products</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">New Arrivals</h2>
+              <p className="text-sm md:text-base text-gray-600">Check out our latest products</p>
             </div>
-            <Link to="/products?filter=new" className="text-primary-600 font-semibold hover:text-primary-700">
+            <Link to="/products?filter=new" className="text-sm md:text-base text-primary-600 font-semibold hover:text-primary-700 whitespace-nowrap">
               View All →
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {newProducts.slice(0, 4).map(product => (
               <ProductCard key={product.id} product={product} />
             ))}

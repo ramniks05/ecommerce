@@ -43,8 +43,8 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-primary-600">
-            <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <Link to="/" className="flex items-center gap-2 text-xl md:text-2xl font-bold text-primary-600">
+            <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="40" height="40" rx="8" fill="currentColor"/>
               <path d="M12 20C12 15.58 15.58 12 20 12C24.42 12 28 15.58 28 20C28 24.42 24.42 28 20 28C15.58 28 12 24.42 12 20Z" fill="white"/>
               <path d="M20 16L24 20L20 24L16 20L20 16Z" fill="currentColor"/>
@@ -69,25 +69,25 @@ const Header = () => {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-4">
-            {/* Search */}
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Search - Hidden on small mobile */}
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
+              className="hidden sm:block text-gray-700 hover:text-primary-600 transition-colors p-2"
               aria-label="Search"
             >
-              <FiSearch size={22} />
+              <FiSearch size={20} />
             </button>
 
-            {/* Wishlist */}
+            {/* Wishlist - Slightly smaller on mobile */}
             <Link
               to="/wishlist"
-              className="relative text-gray-700 hover:text-primary-600 transition-colors"
+              className="relative text-gray-700 hover:text-primary-600 transition-colors p-2"
               aria-label="Wishlist"
             >
-              <FiHeart size={22} />
+              <FiHeart size={20} />
               {wishlistItems.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center font-bold">
                   {wishlistItems.length}
                 </span>
               )}
@@ -96,21 +96,21 @@ const Header = () => {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative text-gray-700 hover:text-primary-600 transition-colors"
+              className="relative text-gray-700 hover:text-primary-600 transition-colors p-2"
               aria-label="Shopping Cart"
             >
-              <FiShoppingCart size={22} />
+              <FiShoppingCart size={20} />
               {getCartCount() > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute top-0 right-0 bg-primary-600 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center font-bold">
                   {getCartCount()}
                 </span>
               )}
             </Link>
 
-            {/* User Menu */}
-            <div className="relative group">
-              <button className="text-gray-700 hover:text-primary-600 transition-colors" aria-label="User menu">
-                <FiUser size={22} />
+            {/* User Menu - Hidden on mobile, shown in mobile menu */}
+            <div className="relative group hidden sm:block">
+              <button className="text-gray-700 hover:text-primary-600 transition-colors p-2" aria-label="User menu">
+                <FiUser size={20} />
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 {user ? (
@@ -144,7 +144,7 @@ const Header = () => {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden text-gray-700 hover:text-primary-600 transition-colors"
+              className="md:hidden text-gray-700 hover:text-primary-600 transition-colors p-2"
               aria-label="Menu"
             >
               {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -177,36 +177,78 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
             <Link
               to="/"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Home
             </Link>
             <Link
               to="/products"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Products
             </Link>
             <Link
               to="/brands"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Brands
             </Link>
             <Link
               to="/categories"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Categories
             </Link>
+            
+            {/* Mobile-only links */}
+            <div className="sm:hidden border-t border-gray-200 mt-2 pt-2">
+              <button
+                onClick={() => {
+                  setIsSearchOpen(true);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full text-left text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <FiSearch size={18} />
+                Search
+              </button>
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <FiUser size={18} />
+                    My Profile
+                  </Link>
+                  <Link
+                    to="/orders"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    My Orders
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <FiUser size={18} />
+                  Login
+                </Link>
+              )}
+            </div>
           </nav>
         </div>
       )}

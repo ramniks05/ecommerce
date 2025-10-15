@@ -4,10 +4,10 @@ import { brands } from '../data/mockData';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-20">
+    <footer className="bg-gray-900 text-gray-300 mt-12 md:mt-20">
       {/* Main Footer */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {/* About */}
           <div>
             <h3 className="text-white text-lg font-bold mb-4">Catalix</h3>
@@ -80,7 +80,7 @@ const Footer = () => {
           </div>
 
           {/* Newsletter */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <h3 className="text-white text-lg font-bold mb-4">Newsletter</h3>
             <p className="text-sm mb-4">
               Subscribe to get special offers and updates.
@@ -89,11 +89,11 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Your email"
-                className="px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-primary-500"
+                className="px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-primary-500 text-sm"
               />
               <button
                 type="submit"
-                className="bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition-colors"
+                className="bg-primary-600 text-white px-4 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold text-sm"
               >
                 Subscribe
               </button>
