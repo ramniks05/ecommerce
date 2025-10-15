@@ -2,6 +2,12 @@
 
 A modern, fully-featured ecommerce frontend built with React, Vite, and Tailwind CSS. This project emphasizes brand-specific pages and showcases, making it perfect for multi-brand retail platforms.
 
+## 🌐 Live Demo
+
+**Production URL:** https://ecommerce-156vkzyvs-ramesh-kumars-projects-1f5ac258.vercel.app
+
+**GitHub Repository:** https://github.com/ramniks05/ecommerce.git
+
 ## 🚀 Features
 
 ### Core Features
