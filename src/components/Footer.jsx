@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* About */}
           <div>
-            <h3 className="text-white text-lg font-bold mb-4">BrandStore</h3>
+            <h3 className="text-white text-lg font-bold mb-4">Catalix</h3>
             <p className="text-sm mb-4">
               Your premier destination for authentic branded products. Quality, style, and trust in every purchase.
             </p>
@@ -106,7 +106,7 @@ const Footer = () => {
       <div className="border-t border-gray-800">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-            <p>&copy; 2024 BrandStore. All rights reserved.</p>
+            <p>&copy; 2024 Catalix. All rights reserved.</p>
             <div className="flex gap-6">
               <Link to="/privacy" className="hover:text-primary-400 transition-colors">
                 Privacy Policy

@@ -1,4 +1,4 @@
-# BrandStore - Brand-Focused Ecommerce Frontend
+# Catalix - Brand-Focused Ecommerce Frontend
 
 A modern, fully-featured ecommerce frontend built with React, Vite, and Tailwind CSS. This project emphasizes brand-specific pages and showcases, making it perfect for multi-brand retail platforms.
 

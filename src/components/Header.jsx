@@ -43,8 +43,13 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-primary-600">
-            BrandStore
+          <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-primary-600">
+            <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="8" fill="currentColor"/>
+              <path d="M12 20C12 15.58 15.58 12 20 12C24.42 12 28 15.58 28 20C28 24.42 24.42 28 20 28C15.58 28 12 24.42 12 20Z" fill="white"/>
+              <path d="M20 16L24 20L20 24L16 20L20 16Z" fill="currentColor"/>
+            </svg>
+            Catalix
           </Link>
 
           {/* Desktop Navigation */}
