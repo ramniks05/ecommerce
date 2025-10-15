@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { products, searchProducts } from '../data/mockData';
+import { useSearchParams, Link } from 'react-router-dom';
+import { products, searchProducts, brands } from '../data/mockData';
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
 import Breadcrumb from '../components/Breadcrumb';
@@ -68,17 +68,58 @@ const Products = () => {
   }, [products, sortBy, filters, searchQuery]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Breadcrumb items={[{ label: 'Products' }]} />
+    <div>
+      {/* Brand Banner Strip */}
+      <section className="bg-gradient-to-r from-primary-600 to-primary-800 py-4 md:py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-white">
+              <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <h3 className="font-bold text-lg md:text-xl">Shop Authentic Brands</h3>
+                <p className="text-sm text-white/90">100% Original Products from Trusted Brands</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 md:gap-6 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto justify-center">
+              {brands.slice(0, 5).map(brand => (
+                <Link
+                  key={brand.id}
+                  to={`/brands/${brand.slug}`}
+                  className="flex-shrink-0 bg-white rounded-lg p-2 hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <img
+                    src={brand.logo}
+                    alt={brand.name}
+                    className="h-10 md:h-12 w-16 md:w-20 object-contain"
+                  />
+                </Link>
+              ))}
+            </div>
+            
+            <Link 
+              to="/brands" 
+              className="bg-white text-primary-600 px-6 py-2.5 rounded-lg font-semibold hover:bg-primary-50 transition-colors whitespace-nowrap text-sm md:text-base"
+            >
+              View All Brands →
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          {searchQuery ? `Search Results for "${searchQuery}"` : 'All Products'}
-        </h1>
-        <p className="text-gray-600">
-          {filteredProducts.length} products found
-        </p>
-      </div>
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumb items={[{ label: 'Products' }]} />
+
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            {searchQuery ? `Search Results for "${searchQuery}"` : 'All Products'}
+          </h1>
+          <p className="text-gray-600">
+            {filteredProducts.length} products found
+          </p>
+        </div>
 
       <div className="flex gap-8">
         {/* Desktop Sidebar */}

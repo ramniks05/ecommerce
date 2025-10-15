@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import Notification from './components/Notification';
 
 import Home from './pages/Home';
+import Landing from './pages/Landing';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Brands from './pages/Brands';
@@ -37,6 +38,7 @@ function App() {
                 <main className="flex-grow">
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/landing" element={<Landing />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/products/:slug" element={<ProductDetail />} />
                     <Route path="/brands" element={<Brands />} />
