@@ -37,8 +37,8 @@ function App() {
                 <Notification />
                 <main className="flex-grow">
                   <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/landing" element={<Landing />} />
+                    <Route path="/" element={<Landing />} />
+                    <Route path="/home-old" element={<Home />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/products/:slug" element={<ProductDetail />} />
                     <Route path="/brands" element={<Brands />} />

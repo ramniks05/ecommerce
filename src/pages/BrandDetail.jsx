@@ -58,37 +58,6 @@ const BrandDetail = () => {
 
   return (
     <div>
-      {/* Brand Hero */}
-      <section className="relative h-96 overflow-hidden">
-        <img
-          src={brand.heroImage}
-          alt={brand.name}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 flex items-center">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl text-white">
-              <h1 className="text-5xl font-bold mb-4">{brand.name}</h1>
-              <p className="text-xl mb-6 text-white/90">{brand.description}</p>
-              <div className="flex gap-6 text-sm">
-                <div>
-                  <span className="text-white/70">Founded</span>
-                  <div className="font-bold text-lg">{brand.founded}</div>
-                </div>
-                <div>
-                  <span className="text-white/70">Products</span>
-                  <div className="font-bold text-lg">{brand.productCount}</div>
-                </div>
-                <div>
-                  <span className="text-white/70">Categories</span>
-                  <div className="font-bold text-lg">{brand.categories.length}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb
           items={[
@@ -97,14 +66,37 @@ const BrandDetail = () => {
           ]}
         />
 
-        {/* Brand Story */}
-        <section className="my-12 bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Story</h2>
-          <p className="text-gray-700 leading-relaxed text-lg">{brand.story}</p>
+        {/* Brand Banner - Above Products */}
+        <section className="my-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="bg-white rounded-xl p-3 shadow-lg flex-shrink-0">
+                <img
+                  src={brand.logo}
+                  alt={`${brand.name} logo`}
+                  className="h-16 md:h-20 w-auto object-contain"
+                />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">{brand.name}</h2>
+                <p className="text-white/90 text-sm md:text-base">{brand.description}</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="bg-white/20 backdrop-blur-sm px-4 md:px-6 py-3 rounded-xl text-center">
+                <div className="text-2xl md:text-3xl font-bold">{brand.productCount}</div>
+                <div className="text-xs md:text-sm text-white/80">Products</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm px-4 md:px-6 py-3 rounded-xl text-center">
+                <div className="text-2xl md:text-3xl font-bold">{brand.founded}</div>
+                <div className="text-xs md:text-sm text-white/80">Est.</div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Products Section */}
-        <section>
+        <section id="products">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">
@@ -188,24 +180,6 @@ const BrandDetail = () => {
               <p className="text-gray-500 text-lg">No products found in this category.</p>
             </div>
           )}
-        </section>
-
-        {/* Brand Categories */}
-        <section className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            {brand.name} Categories
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {brand.categories.map((category, index) => (
-              <div
-                key={index}
-                className="card p-6 text-center hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => setSelectedCategory(category)}
-              >
-                <h3 className="font-semibold text-gray-900">{category}</h3>
-              </div>
-            ))}
-          </div>
         </section>
       </div>
     </div>

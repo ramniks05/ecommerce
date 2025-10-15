@@ -25,22 +25,38 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-primary-600 text-white py-2">
+      {/* Top Bar - Simplified on Mobile */}
+      <div className="bg-primary-600 text-white py-2 md:py-2.5">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center text-sm">
-            <p>Free shipping on orders over ₹5,000</p>
-            <div className="flex gap-4">
+          <div className="flex justify-between items-center text-xs md:text-sm">
+            {/* Mobile: Only Free Shipping Message */}
+            <p className="md:hidden flex items-center gap-1.5 font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Free Shipping ₹5,000+
+            </p>
+            
+            {/* Desktop: Full Message */}
+            <p className="hidden md:block">Free shipping on orders over ₹5,000</p>
+            
+            {/* Links - Hidden on Mobile, Visible on Tablet+ */}
+            <div className="hidden md:flex gap-4">
               <Link to="/brands" className="hover:underline">Brands</Link>
               <Link to="/about" className="hover:underline">About Us</Link>
               <Link to="/contact" className="hover:underline">Contact</Link>
             </div>
+            
+            {/* Mobile: Single Quick Link */}
+            <Link to="/brands" className="md:hidden text-xs font-semibold hover:underline">
+              Brands
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 text-xl md:text-2xl font-bold text-primary-600">
