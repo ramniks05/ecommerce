@@ -2,35 +2,104 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import LoginOptions from '../components/LoginOptions';
 import Breadcrumb from '../components/Breadcrumb';
+import authService from '../services/authService';
 
 const Login = () => {
-  const navigate = useNavigate();
   const { login } = useAuth();
   const { showNotification } = useNotification();
+  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    email: 'demo@example.com',
-    password: 'demo123',
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const result = login(formData.email, formData.password);
-    
-    if (result.success) {
-      showNotification('Login successful!');
-      navigate('/profile');
-    } else {
-      showNotification(result.error, 'error');
+  const handleEmailLogin = async (email, password) => {
+    try {
+      console.log('Attempting email login with Supabase...');
+      
+      // Try Supabase authentication first
+      const { data, error } = await authService.signIn(email, password);
+      
+      if (error) {
+        console.log('Supabase login failed, trying mock login...', error);
+        
+        // Fallback to mock login
+        const result = login(email, password);
+        
+        if (result.success) {
+          showNotification('Login successful!', 'success');
+          navigate('/');
+          return { success: true };
+        } else {
+          return { success: false, error: result.error };
+        }
+      }
+      
+      // Success with Supabase
+      if (data && data.user) {
+        console.log('Supabase login successful:', data);
+        
+        // Update auth context
+        login(email, password);
+        
+        showNotification('Login successful!', 'success');
+        navigate('/');
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Login failed' };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Login failed. Please try again.' };
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleMobileLogin = async (phone) => {
+    try {
+      // For demo purposes, create a mock user for mobile login
+      // In production, you would verify the phone number and find/create the user
+      const mockUser = {
+        id: 'mobile-user-' + Date.now(),
+        email: phone + '@mobile.catalix.com',
+        firstName: 'Mobile',
+        lastName: 'User',
+        phone: phone,
+        phoneVerified: true
+      };
+
+      // Update auth context
+      login(phone + '@mobile.catalix.com', 'mobile-login'); // Using phone as email for demo
+      
+      showNotification('Mobile login successful!', 'success');
+      navigate('/');
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Mobile login failed. Please try again.' };
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      console.log('Starting Google OAuth login...');
+      
+      // Use Supabase Google OAuth
+      const { data, error } = await authService.signInWithGoogle();
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        return { success: false, error: 'Google login failed. Please try again.' };
+      }
+      
+      // Google OAuth will redirect to auth callback page
+      // No need to navigate here
+      console.log('Google OAuth initiated successfully');
+      return { success: true };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { success: false, error: 'Google login failed. Please try again.' };
+    }
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   return (
@@ -38,74 +107,37 @@ const Login = () => {
       <Breadcrumb items={[{ label: 'Login' }]} />
 
       <div className="max-w-md mx-auto">
-        <div className="card p-8">
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600 mb-8">Login to your account</p>
+          <p className="text-gray-600">
+            Or{' '}
+            <Link
+              to="/register"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              create a new account
+            </Link>
+          </p>
+        </div>
 
-          {/* Demo Credentials */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm font-semibold text-blue-900 mb-2">Demo Credentials:</p>
-            <p className="text-sm text-blue-800">Email: demo@example.com</p>
-            <p className="text-sm text-blue-800">Password: demo123</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4 text-primary-600 border-gray-300 rounded" />
-                <span className="text-sm text-gray-700">Remember me</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" className="btn-primary w-full">
-              Login
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary-600 hover:text-primary-700 font-semibold">
-                Register
-              </Link>
-            </p>
+        {/* Demo Credentials */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-sm font-semibold text-blue-900 mb-2">Login Options:</p>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p><strong>Email:</strong> demo@example.com / demo123</p>
+            <p><strong>Google:</strong> Click "Continue with Google" below</p>
           </div>
         </div>
+
+        <LoginOptions
+          onEmailLogin={handleEmailLogin}
+          onMobileLogin={handleMobileLogin}
+          onGoogleLogin={handleGoogleLogin}
+          onBack={handleBack}
+        />
       </div>
     </div>
   );
 };
 
 export default Login;
-

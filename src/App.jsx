@@ -24,6 +24,19 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Orders from './pages/Orders';
 import OrderConfirmation from './pages/OrderConfirmation';
+import AuthCallback from './pages/AuthCallback';
+
+// Admin
+import AdminLayout from './components/AdminLayout';
+import AdminInit from './components/AdminInit';
+import AdminLogin from './pages/admin/Login';
+import AdminDashboard from './pages/admin/Dashboard';
+import ProductsManagement from './pages/admin/ProductsManagement';
+import OrdersManagement from './pages/admin/OrdersManagement';
+import BannerManagement from './pages/admin/BannerManagement';
+import BrandManagement from './pages/admin/BrandManagement';
+import CategoryManagement from './pages/admin/CategoryManagement';
+import UserManagement from './pages/admin/UserManagement';
 
 function App() {
   return (
@@ -37,6 +50,7 @@ function App() {
                 <Notification />
                 <main className="flex-grow">
                   <Routes>
+                    {/* Public Routes */}
                     <Route path="/" element={<Landing />} />
                     <Route path="/home-old" element={<Home />} />
                     <Route path="/products" element={<Products />} />
@@ -50,9 +64,22 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+                    
+                    {/* Admin Routes */}
+                    <Route path="/admin/init" element={<AdminInit />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+                    <Route path="/admin/products" element={<AdminLayout><ProductsManagement /></AdminLayout>} />
+                    <Route path="/admin/orders" element={<AdminLayout><OrdersManagement /></AdminLayout>} />
+                    <Route path="/admin/banners" element={<AdminLayout><BannerManagement /></AdminLayout>} />
+                    <Route path="/admin/brands" element={<AdminLayout><BrandManagement /></AdminLayout>} />
+                    <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
+                    <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+                    <Route path="/admin/settings" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
                   </Routes>
                 </main>
                 <Footer />

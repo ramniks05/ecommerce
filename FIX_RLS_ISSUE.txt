@@ -1,0 +1,98 @@
+========================================
+FIX ROW LEVEL SECURITY (RLS) ISSUE
+========================================
+
+PROBLEM:
+"new row violates row-level security policy for table brands"
+
+This means Supabase RLS is blocking your admin operations.
+
+========================================
+QUICK FIX (2 MINUTES)
+========================================
+
+Step 1: Go to Supabase SQL Editor
+https://supabase.com/dashboard/project/mqvxithtgyewckeabbsq/sql
+
+Step 2: Click "New Query"
+
+Step 3: Open file in your project:
+disable-rls-for-testing.sql
+
+Step 4: Copy ALL content from that file
+
+Step 5: Paste into Supabase SQL Editor
+
+Step 6: Click "Run" (or press Ctrl+Enter)
+
+Step 7: Wait for "Success" message
+
+========================================
+WHAT THIS DOES
+========================================
+
+Disables RLS on all tables for testing:
+✅ brands - Can now add/edit/delete
+✅ products - Can now add/edit/delete
+✅ categories - Can now add/edit/delete
+✅ banners - Can now add/edit/delete
+✅ orders - Can now view/manage
+✅ users - Can now manage
+✅ All other tables - Full access
+
+========================================
+AFTER RUNNING THE SCRIPT
+========================================
+
+1. Go back to: http://localhost:5173/admin/brands
+
+2. Click "Add Brand"
+
+3. Fill form and upload logo
+
+4. Click "Save"
+
+5. SUCCESS! Brand created! ✅
+
+========================================
+IMPORTANT NOTES
+========================================
+
+⚠️ This disables security for TESTING ONLY!
+
+For PRODUCTION, you should:
+1. Re-enable RLS
+2. Create proper policies
+3. Restrict based on user roles
+
+But for now, this lets you test and develop!
+
+========================================
+VERIFY IT WORKED
+========================================
+
+After running the script, check:
+
+1. In Supabase SQL Editor, run:
+   SELECT tablename, rowsecurity 
+   FROM pg_tables 
+   WHERE schemaname = 'public';
+
+2. You should see:
+   brands        | f  ← f = false = disabled ✅
+   products      | f  ← disabled ✅
+   categories    | f  ← disabled ✅
+
+========================================
+NEXT STEPS
+========================================
+
+1. Run disable-rls-for-testing.sql
+2. Test adding brand with image
+3. Should work perfectly!
+4. Later: Add proper RLS policies for production
+
+========================================
+
+Run the SQL script and your admin panel will work! 🚀
+

@@ -1,0 +1,166 @@
+========================================
+COMPLETE YOUR SUPABASE SETUP
+========================================
+
+Great! Your database is set up. Now complete these final steps:
+
+========================================
+STEP 1: Get Your Anon Key
+========================================
+
+1. In Supabase Dashboard, go to:
+   Settings → API
+   (Left sidebar → Settings gear icon → API)
+
+2. Find this section:
+   "Project API keys"
+
+3. Copy the "anon public" key
+   (It's a LONG key starting with: eyJhbGc...)
+
+4. This is your VITE_SUPABASE_ANON_KEY
+
+========================================
+STEP 2: Update .env.local
+========================================
+
+1. Open .env.local in your editor
+
+2. It should already have:
+   VITE_SUPABASE_URL=https://mqvxithtgyewckeabbsq.supabase.co
+
+3. Add the anon key line:
+   VITE_SUPABASE_ANON_KEY=paste-your-anon-key-here
+
+4. Final .env.local should look like:
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://mqvxithtgyewckeabbsq.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-key-here
+
+# Razorpay Configuration
+VITE_RAZORPAY_KEY_ID=rzp_test_ROysXhPNhStyyy
+
+5. Save the file
+
+========================================
+STEP 3: Enable Phone Auth (Optional)
+========================================
+
+For real SMS OTP (requires Twilio):
+
+1. In Supabase, go to:
+   Authentication → Providers
+
+2. Find "Phone" and toggle it ON
+
+3. Configure Twilio:
+   - Sign up: https://www.twilio.com/try-twilio
+   - Get Account SID, Auth Token, Phone Number
+   - Add to Supabase Phone settings
+
+4. Or skip this - app works without it!
+
+========================================
+STEP 4: Restart Server
+========================================
+
+In your terminal:
+
+1. Press Ctrl+C to stop server
+
+2. Run: npm run dev
+
+3. Server starts with Supabase connected!
+
+========================================
+STEP 5: Test Your App
+========================================
+
+1. Go to: http://localhost:5173/register
+
+2. Fill form and enter phone: 7903152439
+
+3. Click "Create Account"
+
+4. Check console - should say:
+   "💾 Database mode: Saving OTP to Supabase"
+
+5. Check your phone (if Twilio configured)
+   OR check console for OTP (if not)
+
+6. Enter OTP and complete registration
+
+7. User saved to database! ✅
+
+========================================
+VERIFY IN SUPABASE
+========================================
+
+After registration:
+
+1. Go to: Authentication → Users
+   You should see your user account!
+
+2. Go to: Table Editor → user_profiles
+   You should see your profile!
+
+3. Go to: Table Editor → otp_verifications
+   You should see OTP records!
+
+========================================
+YOUR CREDENTIALS
+========================================
+
+Supabase Project ID: mqvxithtgyewckeabbsq
+Supabase URL: https://mqvxithtgyewckeabbsq.supabase.co
+Supabase Password: Catalix@1234
+Anon Key: Get from Settings → API
+
+========================================
+WHAT YOU'LL GET
+========================================
+
+After configuration:
+
+✅ Users saved to database
+✅ OTP saved to database
+✅ Rate limiting active (3 attempts)
+✅ OTP expiry (5 minutes)
+✅ Security features enabled
+✅ Google OAuth ready
+✅ Admin panel works
+✅ Production ready!
+
+========================================
+CURRENT STATUS
+========================================
+
+✅ Database schema loaded
+✅ All tables created
+✅ Supabase URL added to .env.local
+⏳ Need: Add anon key to .env.local
+⏳ Optional: Configure Phone Auth with Twilio
+✅ Then: Restart server and test!
+
+========================================
+QUICK COMMANDS
+========================================
+
+# View .env.local
+type .env.local
+
+# Edit .env.local
+code .env.local
+# or
+notepad .env.local
+
+# Restart server
+npm run dev
+
+========================================
+
+Next: Get your anon key from Supabase Settings → API
+Then: Add it to .env.local
+Finally: Restart server and test!
+

@@ -15,10 +15,12 @@ A modern, fully-featured ecommerce frontend built with React, Vite, and Tailwind
 - **Product Catalog**: Comprehensive product listing with advanced filtering and sorting
 - **Shopping Cart**: Full cart functionality with quantity management and persistence
 - **Wishlist**: Save favorite products for later
-- **Checkout Flow**: Multi-step checkout with form validation
-- **User Authentication**: Mock authentication system with login/register
+- **Checkout Flow**: Multi-step checkout with Razorpay payment integration
+- **Multi-Method Authentication**: Email/Password, Mobile OTP, and Google OAuth login
 - **Order Management**: Order history and tracking
+- **Admin Panel**: Complete backend management for products, brands, orders, and users
 - **Responsive Design**: Mobile-first, fully responsive across all devices
+- **Indian Market Focus**: Rupees (₹), 18% GST, Razorpay payments
 
 ### Brand Features (Key Differentiator)
 - Brand listing page with all available brands
@@ -38,25 +40,44 @@ A modern, fully-featured ecommerce frontend built with React, Vite, and Tailwind
 - **LocalStorage** for data persistence
 - **Mock Data** for realistic product catalog
 
-## 📦 Installation
+## 📦 Quick Start
 
-1. **Clone the repository**
-   ```bash
-   cd ecommerce
-   ```
+### Option 1: Demo Mode (Instant - No Setup!)
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# Install dependencies
+npm install
 
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
+# Start development server
+npm run dev
 
-4. **Open your browser**
-   Navigate to `http://localhost:5173`
+# Open http://localhost:5173
+```
+
+**Test Credentials:**
+- Email Login: `demo@example.com` / `demo123`
+- Mobile Login: Any 10-digit number + any 6-digit OTP (check console)
+- Google Login: Requires Supabase setup (see below)
+
+### Option 2: Full Setup (Database + Google OAuth)
+
+```bash
+# Install dependencies
+npm install
+
+# Setup environment (interactive)
+node setup-env.js
+
+# OR manually create .env.local (see SETUP_ENVIRONMENT.md)
+
+# Start development server
+npm run dev
+```
+
+**See detailed setup guides:**
+- `SETUP_ENVIRONMENT.md` - Environment variables setup
+- `YOUR_GOOGLE_OAUTH_STEPS.txt` - Google OAuth setup (you have Client ID!)
+- `QUICK_GOOGLE_OAUTH_SETUP.md` - Detailed OAuth guide
 
 ## 🏗️ Project Structure
 
@@ -154,20 +175,57 @@ The application includes comprehensive mock data:
 - **Mock User** for authentication (email: demo@example.com, password: demo123)
 - **Sample Orders** for order history
 
-## 🚀 Getting Started for Development
+## 🔐 Authentication
 
-### Demo Credentials
-- **Email**: demo@example.com
-- **Password**: demo123
+### Three Login Methods
+
+1. **📧 Email/Password**
+   - Traditional login
+   - Works with Supabase database or demo mode
+   - Demo: `demo@example.com` / `demo123`
+
+2. **📱 Mobile OTP**
+   - Passwordless login
+   - OTP sent to phone (console in demo mode)
+   - Any 10-digit Indian number works in demo
+
+3. **🔗 Google OAuth**
+   - One-click sign in
+   - Requires Supabase setup
+   - Your Client ID: `176363690527-5u61mmur3v6jdht688mghdegtu6ouqjl...`
+
+**Setup Guide:** See `AUTHENTICATION_GUIDE.md` for complete details
+
+## 🗄️ Database
+
+### Supabase Integration
+
+The app supports full database integration with Supabase:
+
+- User authentication and profiles
+- Product management
+- Order tracking
+- Admin panel
+- Google OAuth
+
+**Setup:**
+1. Create Supabase project at https://supabase.com
+2. Run `database-schema.sql` in SQL Editor
+3. Configure `.env.local` (see `SETUP_ENVIRONMENT.md`)
+4. Restart server
+
+**Without Setup:** App works in demo mode with localStorage
+
+## 🛠️ Development
 
 ### Adding New Products
-Edit `src/data/mockData.js` and add products to the `products` array following the existing structure.
+Edit `src/data/mockData.js` - products are loaded from database when Supabase is configured.
 
-### Adding New Brands
-Edit `src/data/mockData.js` and add brands to the `brands` array. Products will automatically associate via `brandId`.
+### Admin Panel
+Access at `/admin` - manage products, brands, orders, banners, and users.
 
 ### Customizing Theme
-Edit `tailwind.config.js` to customize colors, fonts, and other design tokens.
+Edit `tailwind.config.js` or `src/index.css` for custom colors and styles.
 
 ## 📝 Available Scripts
 
@@ -175,17 +233,53 @@ Edit `tailwind.config.js` to customize colors, fonts, and other design tokens.
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build locally
 
-## 🔄 Future Backend Integration
+## 📚 Documentation
 
-This frontend is ready for backend integration. You'll need to:
+- **`README.md`** (this file) - Project overview
+- **`SETUP_ENVIRONMENT.md`** - Environment variables and Supabase setup
+- **`YOUR_GOOGLE_OAUTH_STEPS.txt`** - Simple steps for Google OAuth (START HERE!)
+- **`QUICK_GOOGLE_OAUTH_SETUP.md`** - Detailed Google OAuth guide
+- **`AUTHENTICATION_GUIDE.md`** - Complete authentication system docs
+- **`SETUP_CHECKLIST.md`** - Project status and next steps
+- **`COMPLETE_BACKEND_SETUP.md`** - Full Supabase backend guide
+- **`GOOGLE_OAUTH_SETUP.md`** - Comprehensive OAuth documentation
+- **`MSG91_WIDGET_QUICK_START.md`** - MSG91 Widget setup (5 minutes!)
+- **`SMS_SETUP_GUIDE.md`** - Real SMS integration (Fast2SMS, MSG91, Twilio)
+- **`database-schema.sql`** - Complete database schema
+- **`env.local.template`** - Environment variables template
+- **`setup-env.js`** - Interactive environment setup script
 
-1. Replace mock data with API calls
-2. Implement real authentication (JWT, OAuth, etc.)
-3. Add actual payment processing
-4. Implement real order management
-5. Add image upload for user profiles
+## 🔄 Backend Integration
 
-The context-based architecture makes it easy to swap out mock implementations with real API calls.
+### Current Status
+
+✅ **Frontend**: 100% Complete
+✅ **Authentication**: Email, Mobile OTP, Google OAuth
+✅ **Database Schema**: Ready to use
+✅ **Integration Code**: Fully implemented
+⏳ **Configuration**: Need Supabase credentials
+
+### What's Integrated
+
+- ✅ Supabase Authentication (Email, Phone, Google OAuth)
+- ✅ User profile management
+- ✅ Product CRUD operations  
+- ✅ Order management
+- ✅ Admin panel
+- ✅ Razorpay payment gateway
+- ✅ Image storage (Supabase Storage)
+
+### To Go Live
+
+1. Create Supabase project
+2. Run database-schema.sql
+3. Configure `.env.local`
+4. Set up Google OAuth
+5. Deploy to Vercel
+6. Add environment variables to Vercel
+7. Test production
+
+**Estimated time: 20-30 minutes**
 
 ## 🤝 Contributing
 

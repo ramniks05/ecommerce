@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import { initializeRazorpay, createRazorpayOrder } from '../utils/razorpay';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiCheck } from 'react-icons/fi';
 
@@ -23,7 +24,7 @@ const Checkout = () => {
     state: user?.addresses?.[0]?.state || '',
     zipCode: user?.addresses?.[0]?.zipCode || '',
     country: user?.addresses?.[0]?.country || 'USA',
-    paymentMethod: 'card',
+    paymentMethod: 'razorpay',
     cardNumber: '',
     cardName: '',
     cardExpiry: '',
@@ -42,7 +43,7 @@ const Checkout = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (step === 1) {
@@ -54,19 +55,69 @@ const Checkout = () => {
       setStep(2);
     } else if (step === 2) {
       // Validate payment info
-      if (formData.paymentMethod === 'card') {
+      if (formData.paymentMethod === 'razorpay') {
+        // Razorpay - no card details needed
+        setStep(3);
+      } else if (formData.paymentMethod === 'card') {
         if (!formData.cardNumber || !formData.cardName || !formData.cardExpiry || !formData.cardCVV) {
           showNotification('Please fill in all payment details', 'error');
           return;
         }
+        setStep(3);
+      } else {
+        // COD or other methods
+        setStep(3);
       }
-      setStep(3);
     } else if (step === 3) {
-      // Place order
+      // Place order with payment
       const orderId = `ORD-${Date.now()}`;
-      clearCart();
-      showNotification('Order placed successfully!');
-      navigate(`/order-confirmation/${orderId}`);
+      
+      if (formData.paymentMethod === 'razorpay') {
+        // Razorpay Payment Integration
+        try {
+          // Create Razorpay order
+          const razorpayOrder = await createRazorpayOrder(total);
+          
+          const orderData = {
+            orderId,
+            razorpayOrderId: razorpayOrder.id,
+            total,
+            customerName: `${formData.firstName} ${formData.lastName}`,
+            customerEmail: formData.email,
+            customerPhone: formData.phone,
+          };
+
+          // Initialize Razorpay checkout
+          await initializeRazorpay(
+            orderData,
+            // Success callback
+            (paymentResponse) => {
+              console.log('Payment successful:', paymentResponse);
+              clearCart();
+              showNotification('Payment successful! Order placed.');
+              navigate(`/order-confirmation/${orderId}`);
+            },
+            // Failure callback
+            (error) => {
+              console.error('Payment failed:', error);
+              showNotification('Payment failed. Please try again.', 'error');
+            }
+          );
+        } catch (error) {
+          console.error('Error initializing payment:', error);
+          showNotification('Payment initialization failed', 'error');
+        }
+      } else if (formData.paymentMethod === 'cod') {
+        // Cash on Delivery - Direct order placement
+        clearCart();
+        showNotification('Order placed successfully! Pay on delivery.');
+        navigate(`/order-confirmation/${orderId}`);
+      } else {
+        // Other payment methods (mock)
+        clearCart();
+        showNotification('Order placed successfully!');
+        navigate(`/order-confirmation/${orderId}`);
+      }
     }
   };
 
@@ -257,29 +308,26 @@ const Checkout = () => {
                 </h2>
 
                 <div className="mb-6">
-                  <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-600 transition-colors mb-3">
+                  <label className="flex items-center gap-3 p-4 border-2 border-primary-200 bg-primary-50 rounded-lg cursor-pointer hover:border-primary-600 transition-colors mb-3">
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="card"
-                      checked={formData.paymentMethod === 'card'}
+                      value="razorpay"
+                      checked={formData.paymentMethod === 'razorpay'}
                       onChange={handleInputChange}
                       className="w-5 h-5"
                     />
-                    <span className="font-semibold">Credit/Debit Card</span>
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <div>
+                        <span className="font-semibold block">Razorpay (Recommended)</span>
+                        <span className="text-xs text-gray-600">UPI, Cards, Net Banking, Wallets</span>
+                      </div>
+                    </div>
                   </label>
                   <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-600 transition-colors mb-3">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="paypal"
-                      checked={formData.paymentMethod === 'paypal'}
-                      onChange={handleInputChange}
-                      className="w-5 h-5"
-                    />
-                    <span className="font-semibold">PayPal</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-600 transition-colors">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -288,7 +336,28 @@ const Checkout = () => {
                       onChange={handleInputChange}
                       className="w-5 h-5"
                     />
-                    <span className="font-semibold">Cash on Delivery</span>
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="font-semibold">Cash on Delivery</span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-600 transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="card"
+                      checked={formData.paymentMethod === 'card'}
+                      onChange={handleInputChange}
+                      className="w-5 h-5"
+                    />
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="font-semibold">Credit/Debit Card (Manual)</span>
+                    </div>
                   </label>
                 </div>
 
@@ -384,13 +453,22 @@ const Checkout = () => {
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
                     Payment Method
                   </h2>
-                  <p className="text-gray-700 capitalize">
-                    {formData.paymentMethod === 'card' ? 'Credit/Debit Card' : formData.paymentMethod}
+                  <p className="text-gray-700">
+                    {formData.paymentMethod === 'razorpay' && 'Razorpay (UPI, Cards, Net Banking, Wallets)'}
+                    {formData.paymentMethod === 'cod' && 'Cash on Delivery'}
+                    {formData.paymentMethod === 'card' && 'Credit/Debit Card'}
                   </p>
                   {formData.paymentMethod === 'card' && formData.cardNumber && (
                     <p className="text-gray-600 mt-2">
                       **** **** **** {formData.cardNumber.slice(-4)}
                     </p>
+                  )}
+                  {formData.paymentMethod === 'razorpay' && (
+                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        ✓ You will be redirected to Razorpay secure payment gateway
+                      </p>
+                    </div>
                   )}
                   <button
                     type="button"

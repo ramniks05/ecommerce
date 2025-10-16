@@ -1,0 +1,13 @@
+# Copy this to .env.local file in your project root
+
+# Supabase Configuration
+# Get these from: https://app.supabase.com/project/_/settings/api
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Razorpay Configuration (Test Mode)
+# From your Razorpay dashboard
+VITE_RAZORPAY_KEY_ID=rzp_test_ROysXhPNhStyyy
+
+# Note: Razorpay Key Secret should NEVER be in frontend
+# It should only be in backend/serverless functions
