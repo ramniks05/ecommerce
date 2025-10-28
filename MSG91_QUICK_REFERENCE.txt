@@ -1,0 +1,184 @@
+========================================
+MSG91 QUICK REFERENCE CARD
+========================================
+
+🔑 YOUR CREDENTIALS
+========================================
+Auth Key: [Get from MSG91 Dashboard]
+Template ID: [Get after template approval]
+Sender ID: CATALIX
+
+📝 SETUP COMMANDS
+========================================
+1. Edit .env.local:
+
+VITE_SMS_PROVIDER=msg91
+VITE_MSG91_AUTH_KEY=your-auth-key-here
+VITE_MSG91_SENDER_ID=CATALIX
+VITE_MSG91_TEMPLATE_ID=your-template-id-here
+VITE_MSG91_ROUTE=4
+
+2. Restart server:
+npm run dev
+
+========================================
+📱 OTP TEMPLATE
+========================================
+Template Name: Catalix OTP Verification
+Category: Transactional - OTP
+Content:
+"Your Catalix verification code is ##OTP##. Valid for 5 minutes. Do not share this code with anyone."
+
+========================================
+💰 PRICING
+========================================
+OTP SMS: ₹0.15 per SMS
+₹100 = ~660 SMS
+₹500 = ~3,300 SMS
+₹1000 = ~6,600 SMS
+
+========================================
+⏱️ DELIVERY TIME
+========================================
+Normal: 5-10 seconds
+Peak hours: 30-60 seconds
+Delivery rate: 98%
+
+========================================
+🔗 IMPORTANT LINKS
+========================================
+Dashboard: https://control.msg91.com/
+Create Template: Dashboard → Campaigns → SMS → Templates
+Add Credits: Dashboard → Wallet → Add Money
+View Reports: Dashboard → Reports → SMS
+Get Auth Key: Dashboard → Settings → API
+Support: hello@msg91.com | +91 9650 600 645
+
+========================================
+✅ TESTING STEPS
+========================================
+1. Go to: http://localhost:5173/register
+2. Fill form with REAL phone number
+3. Click "Create Account"
+4. Check phone for SMS (5-10 sec)
+5. Enter OTP from SMS
+6. Success! Account created
+
+========================================
+🚨 COMMON ISSUES
+========================================
+
+Issue: "Template not approved"
+Fix: Wait 2-4 hours, check dashboard
+
+Issue: "Invalid auth key"
+Fix: Regenerate key in dashboard, update .env.local
+
+Issue: "Insufficient balance"
+Fix: Add credits in Wallet section
+
+Issue: "OTP not received"
+Fix: Check phone number format (10 digits)
+     Check MSG91 Reports for delivery status
+
+========================================
+📊 CONSOLE OUTPUT
+========================================
+
+✅ Working:
+"📱 Sending OTP to +919876543210...
+✅ SMS sent successfully via msg91"
+
+❌ Not configured:
+"⚠️ SMS not configured. Using console fallback.
+📱 OTP for +919876543210: 123456"
+
+========================================
+🎯 QUICK START (30 MIN)
+========================================
+□ Sign up: msg91.com (5 min)
+□ Get Auth Key (2 min)
+□ Create template (5 min)
+□ Wait for approval (2-4 hours)
+□ Add ₹500 credits (5 min)
+□ Configure .env.local (3 min)
+□ Test registration (2 min)
+□ Success! ✅
+
+========================================
+💡 PRO TIPS
+========================================
+1. Template approval: 2-4 hours (weekdays faster)
+2. Add ₹500+ for peace of mind
+3. Test with real number first
+4. Check Reports daily for issues
+5. Set balance alert at ₹100
+6. Save Auth Key securely
+7. Never commit .env.local to git
+
+========================================
+📞 EMERGENCY SUPPORT
+========================================
+Email: hello@msg91.com
+Phone: +91 9650 600 645
+Live Chat: Dashboard (bottom right)
+Hours: 10 AM - 7 PM IST (Mon-Sat)
+
+========================================
+🔐 SECURITY
+========================================
+✅ .env.local in .gitignore
+✅ Rotate Auth Key every 6 months
+✅ Monitor usage reports
+✅ Set IP restrictions in MSG91
+❌ Never share Auth Key
+❌ Never commit credentials
+
+========================================
+🚀 PRODUCTION DEPLOYMENT
+========================================
+Vercel Environment Variables:
+- VITE_SMS_PROVIDER=msg91
+- VITE_MSG91_AUTH_KEY=your-key
+- VITE_MSG91_SENDER_ID=CATALIX
+- VITE_MSG91_TEMPLATE_ID=your-template-id
+- VITE_MSG91_ROUTE=4
+
+Then: Redeploy
+
+========================================
+📈 USAGE TRACKING
+========================================
+Check: Dashboard → Reports → SMS
+See: Delivery status, timestamp, cost
+Filter: By date, number, status
+Export: CSV for analysis
+
+========================================
+✨ YOUR SETUP STATUS
+========================================
+□ Account created
+□ Auth Key obtained
+□ Template created
+□ Template approved
+□ Credits added
+□ .env.local configured
+□ Server restarted
+□ Test successful
+□ SMS received
+□ Ready for production!
+
+========================================
+🎉 SUCCESS INDICATORS
+========================================
+✅ Real SMS received on phone
+✅ Console shows: "SMS sent via msg91"
+✅ Reports show "Delivered" status
+✅ Balance decreasing correctly
+✅ Users can complete registration
+✅ Production ready!
+
+========================================
+For detailed guide, see: MSG91_SETUP_GUIDE.md
+For SMS overview, see: SMS_SETUP_GUIDE.md
+

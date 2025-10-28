@@ -1,0 +1,205 @@
+========================================
+YOUR GOOGLE OAUTH SETUP STEPS
+========================================
+
+You have Google OAuth Client ID:
+176363690527-5u61mmur3v6jdht688mghdegtu6ouqjl.apps.googleusercontent.com
+
+Follow these steps to complete setup:
+
+========================================
+STEP 1: Get Client Secret
+========================================
+
+1. Go to: https://console.cloud.google.com/apis/credentials
+
+2. Find your OAuth Client ID in the list
+
+3. Click on it
+
+4. You'll see:
+   Client ID: 176363690527-5u61mmur3v6jdht688mghdegtu6ouqjl.apps.googleusercontent.com
+   Client secret: GOCSPX-xxxxxxxxxxxxxxxxx (COPY THIS!)
+
+========================================
+STEP 2: Create Supabase Project
+========================================
+
+1. Go to: https://supabase.com
+
+2. Click "New Project"
+
+3. Fill in:
+   Name: catalix-ecommerce
+   Database Password: (make a strong one, save it!)
+   Region: Singapore (closest to India)
+
+4. Click "Create"
+
+5. Wait 2-3 minutes
+
+6. Once ready, go to Settings → API
+
+7. Copy these TWO values:
+   - Project URL: https://xxxxx.supabase.co
+   - anon public key: eyJhbGc... (long string)
+
+========================================
+STEP 3: Run Database Schema
+========================================
+
+1. In Supabase, go to: SQL Editor
+
+2. Click "New Query"
+
+3. In your project, open file: database-schema.sql
+
+4. Copy EVERYTHING from that file
+
+5. Paste into Supabase SQL Editor
+
+6. Click "Run" button
+
+7. Wait for "Success. No rows returned"
+
+========================================
+STEP 4: Configure Google in Supabase
+========================================
+
+1. In Supabase, go to: Authentication → Providers
+
+2. Find "Google" in the list
+
+3. Toggle it ON
+
+4. Enter:
+   Client ID: 176363690527-5u61mmur3v6jdht688mghdegtu6ouqjl.apps.googleusercontent.com
+   Client Secret: (paste from Step 1)
+
+5. COPY the Callback URL shown (like: https://xxxxx.supabase.co/auth/v1/callback)
+
+6. Click "Save"
+
+========================================
+STEP 5: Update Google Console
+========================================
+
+1. Go back to: https://console.cloud.google.com/apis/credentials
+
+2. Click on your OAuth Client ID
+
+3. Under "Authorized redirect URIs", click "ADD URI"
+
+4. Paste the callback URL from Step 4
+
+5. Make sure you also have:
+   - http://localhost:5173 (for local testing)
+
+6. Click "Save"
+
+========================================
+STEP 6: Create .env.local File
+========================================
+
+1. In your project folder (where package.json is)
+
+2. Create a new file named exactly: .env.local
+
+3. Add this content (replace with YOUR values):
+
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-from-step-2
+VITE_RAZORPAY_KEY_ID=rzp_test_ROysXhPNhStyyy
+
+4. Save the file
+
+========================================
+STEP 7: Restart Server & Test
+========================================
+
+1. Stop your server: Press Ctrl+C
+
+2. Start again: npm run dev
+
+3. Open: http://localhost:5173/login
+
+4. Click "Continue with Google"
+
+5. Sign in with your Google account
+
+6. You'll be redirected back and logged in!
+
+7. Check Supabase Dashboard → Authentication → Users
+   (You should see your account!)
+
+========================================
+DONE! 🎉
+========================================
+
+Now you have:
+✅ Google login working
+✅ Users saved to database
+✅ Registration saves to database
+✅ Email login from database
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Problem: "Invalid API key"
+Solution: Check .env.local file exists and has correct values
+
+Problem: "redirect_uri_mismatch"
+Solution: Make sure callback URL in Google Console matches Supabase exactly
+
+Problem: Server not loading env variables
+Solution: Restart server with Ctrl+C then npm run dev
+
+Problem: Google login works but user not created
+Solution: Check if database-schema.sql was run successfully in Supabase
+
+========================================
+QUICK REFERENCE
+========================================
+
+Your Google Client ID:
+176363690527-5u61mmur3v6jdht688mghdegtu6ouqjl.apps.googleusercontent.com
+
+Where to get Client Secret:
+https://console.cloud.google.com/apis/credentials
+
+Supabase Dashboard:
+https://supabase.com/dashboard
+
+Local App:
+http://localhost:5173
+
+Test Login:
+http://localhost:5173/login
+
+Test Registration:
+http://localhost:5173/register
+
+========================================
+DEMO CREDENTIALS (Work Without Setup)
+========================================
+
+Email Login: demo@example.com / demo123
+Mobile Login: Any 10-digit number + any 6-digit OTP
+
+========================================
+NEXT AFTER THIS
+========================================
+
+1. Test all features locally
+2. Add real products to database
+3. Deploy to Vercel with environment variables
+4. Update Google Console with Vercel URL
+
+========================================
+
+For detailed guides, see:
+- QUICK_GOOGLE_OAUTH_SETUP.md
+- AUTHENTICATION_GUIDE.md
+- SETUP_CHECKLIST.md
+

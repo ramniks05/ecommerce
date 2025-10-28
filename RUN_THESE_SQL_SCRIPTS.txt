@@ -1,0 +1,114 @@
+========================================
+FIX ADMIN PANEL - RUN THESE SQL SCRIPTS
+========================================
+
+Your admin panel needs these tables and RLS disabled.
+
+Run these 3 scripts in Supabase SQL Editor in this order:
+
+========================================
+STEP 1: Add Missing Tables (Optional)
+========================================
+
+File: add-missing-tables.sql
+
+This adds:
+- product_images table (for multiple product images)
+- addresses table (for user shipping addresses)
+
+Go to: https://supabase.com/dashboard/project/mqvxithtgyewckeabbsq/sql
+→ New Query
+→ Copy content from add-missing-tables.sql
+→ Paste and Run
+→ Success!
+
+========================================
+STEP 2: Fix Storage Policies (For Image Uploads)
+========================================
+
+File: fix-storage-policies.sql
+
+This allows:
+- Image uploads to Storage
+- Creates buckets: brands, products, banners
+- Sets up public access for reading
+- Allows uploads from admin
+
+Go to: https://supabase.com/dashboard/project/mqvxithtgyewckeabbsq/sql
+→ New Query
+→ Copy content from fix-storage-policies.sql
+→ Paste and Run
+→ Success!
+
+========================================
+STEP 3: Disable RLS (For Testing - REQUIRED!)
+========================================
+
+File: disable-rls-for-testing.sql
+
+This disables security on all tables so admin can:
+- Add brands ✅
+- Add products ✅
+- Upload images ✅
+- Manage everything ✅
+
+Go to: https://supabase.com/dashboard/project/mqvxithtgyewckeabbsq/sql
+→ New Query
+→ Copy content from disable-rls-for-testing.sql
+→ Paste and Run
+→ Success!
+
+========================================
+AFTER RUNNING ALL SCRIPTS
+========================================
+
+Your admin panel will work perfectly:
+
+✅ Add Brand - Works!
+✅ Upload Logo - Works!
+✅ Add Product - Works!
+✅ Upload Images - Works!
+✅ Manage Categories - Works!
+✅ Manage Banners - Works!
+✅ View Orders - Works!
+✅ Manage Users - Works!
+
+========================================
+QUICK SUMMARY
+========================================
+
+Problem: RLS blocking admin operations
+Solution: Run 3 SQL scripts
+Time: 3 minutes
+Result: Fully working admin panel!
+
+========================================
+PRIORITY
+========================================
+
+REQUIRED (Must run):
+- disable-rls-for-testing.sql ⭐ RUN THIS FIRST!
+- fix-storage-policies.sql ⭐ RUN THIS SECOND!
+
+OPTIONAL (Nice to have):
+- add-missing-tables.sql (for future features)
+
+========================================
+TESTING AFTER SCRIPTS
+========================================
+
+1. Go to: http://localhost:5173/admin/brands
+2. Click "Add Brand"
+3. Fill form:
+   - Name: Test Brand
+   - Slug: test-brand
+   - Description: Testing
+4. Upload logo image
+5. Click Save
+6. SUCCESS! ✅
+
+========================================
+
+Run disable-rls-for-testing.sql and fix-storage-policies.sql
+Then your admin panel works! 🚀
+
