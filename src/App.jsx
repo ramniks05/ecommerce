@@ -37,6 +37,7 @@ import BannerManagement from './pages/admin/BannerManagement';
 import BrandManagement from './pages/admin/BrandManagement';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import UserManagement from './pages/admin/UserManagement';
+import Health from './pages/admin/Health';
 
 function App() {
   return (
@@ -79,6 +80,7 @@ function App() {
                     <Route path="/admin/brands" element={<AdminLayout><BrandManagement /></AdminLayout>} />
                     <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
                     <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+                    <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
                     <Route path="/admin/settings" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
                   </Routes>
                 </main>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiImage, FiEye, FiEyeOff, FiX } from 'react-icons/fi';
 import { categoryService, fileService } from '../../services/supabaseService';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import Modal from '../../components/Modal';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -23,11 +25,17 @@ const CategoryManagement = () => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    loadCategories();
+    const timeoutId = setTimeout(() => setLoading(false), 4000);
+    loadCategories().finally(() => clearTimeout(timeoutId));
   }, []);
 
   const loadCategories = async () => {
     try {
+      if (!isSupabaseConfigured) {
+        console.log('[CategoryManagement] Supabase not configured - using empty list');
+        setCategories([]);
+        return;
+      }
       const { data, error } = await categoryService.getCategories();
       if (error) throw error;
       setCategories(data || []);
@@ -271,10 +279,9 @@ const CategoryManagement = () => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+      <Modal open={showModal} onClose={() => setShowModal(false)}>
+        <div className="p-5">
+          <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingCategory ? 'Edit Category' : 'Add New Category'}
@@ -459,8 +466,7 @@ const CategoryManagement = () => {
               </form>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

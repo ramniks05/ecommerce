@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { verifyAdminCredentials } from '../../utils/adminUsers';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import authService from '../../services/authService';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
@@ -17,14 +19,41 @@ const AdminLogin = () => {
     setError('');
 
     try {
+      // Try Supabase Auth + admin_users role/permissions when configured
+      if (isSupabaseConfigured) {
+        const { data, error: authError } = await authService.signIn(formData.email, formData.password);
+        if (!authError && data && data.user) {
+          // Authenticated: verify admin role
+          const { data: adminRow, error: dbError } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('email', formData.email)
+            .single();
+
+          if (!dbError && adminRow) {
+            const adminUser = {
+              id: adminRow.id,
+              email: adminRow.email,
+              name: adminRow.name || data.user.email,
+              role: adminRow.role || 'admin',
+              permissions: adminRow.permissions || ['products', 'orders', 'brands'],
+            };
+            localStorage.setItem('adminUser', JSON.stringify(adminUser));
+            localStorage.setItem('isAdmin', 'true');
+            navigate('/admin');
+            return;
+          }
+
+          setError('Authenticated, but this user is not in admin_users');
+          return;
+        }
+        // If auth fails, fall back to local list
+      }
+
       const result = verifyAdminCredentials(formData.email, formData.password);
-      
       if (result.success) {
-        // Store admin session
         localStorage.setItem('adminUser', JSON.stringify(result.user));
         localStorage.setItem('isAdmin', 'true');
-        
-        // Redirect to admin dashboard
         navigate('/admin');
       } else {
         setError(result.error);

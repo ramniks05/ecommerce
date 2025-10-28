@@ -7,7 +7,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import authService from '../services/authService';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
 
@@ -37,8 +37,25 @@ const Login = () => {
       if (data && data.user) {
         console.log('Supabase login successful:', data);
         
-        // Update auth context
-        login(email, password);
+        // Fetch profile and set auth context directly
+        try {
+          const { data: current } = await authService.getCurrentUser();
+          if (current && current.user) {
+            setUser({
+              id: current.user.id,
+              email: current.user.email,
+              firstName: current.profile?.first_name || '',
+              lastName: current.profile?.last_name || '',
+              phone: current.profile?.phone || '',
+              avatar: current.profile?.avatar_url || '',
+            });
+          } else {
+            // Fallback minimal user
+            setUser({ id: data.user.id, email: data.user.email });
+          }
+        } catch (e) {
+          setUser({ id: data.user.id, email: data.user.email });
+        }
         
         showNotification('Login successful!', 'success');
         navigate('/');

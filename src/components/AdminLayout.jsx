@@ -45,15 +45,18 @@ const AdminLayout = ({ children }) => {
     { icon: FiSettings, label: 'Settings', path: '/admin/settings' },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Clear admin session
     localStorage.removeItem('adminUser');
     localStorage.removeItem('isAdmin');
     setAdminUser(null);
     
     // Also logout regular user if logged in
-    logout();
-    navigate('/admin/login');
+    try {
+      await logout();
+    } finally {
+      navigate('/admin/login');
+    }
   };
 
   return (

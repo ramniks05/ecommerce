@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiEye, FiEyeOff, FiStar, FiPackage, FiImage, FiX, FiSearch, FiFilter } from 'react-icons/fi';
 import { productService, brandService, categoryService, fileService } from '../../services/supabaseService';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import Modal from '../../components/Modal';
 
 const ProductsManagement = () => {
   const [products, setProducts] = useState([]);
@@ -46,11 +48,19 @@ const ProductsManagement = () => {
   const [newSpecValue, setNewSpecValue] = useState('');
 
   useEffect(() => {
-    loadData();
+    const timeoutId = setTimeout(() => setLoading(false), 4000);
+    loadData().finally(() => clearTimeout(timeoutId));
   }, []);
 
   const loadData = async () => {
     try {
+      if (!isSupabaseConfigured) {
+        console.log('[ProductsManagement] Supabase not configured - using empty lists');
+        setProducts([]);
+        setBrands([]);
+        setCategories([]);
+        return;
+      }
       const [productsRes, brandsRes, categoriesRes] = await Promise.all([
         productService.getProducts(),
         brandService.getBrands(),
@@ -486,10 +496,9 @@ const ProductsManagement = () => {
       </div>
 
       {/* Product Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+      <Modal open={showModal} onClose={() => setShowModal(false)}>
+        <div className="p-5">
+          <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -897,8 +906,7 @@ const ProductsManagement = () => {
               </form>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

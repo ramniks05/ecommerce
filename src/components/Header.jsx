@@ -14,6 +14,15 @@ const Header = () => {
   const { wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      setIsMenuOpen(false);
+      navigate('/');
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -138,7 +147,7 @@ const Header = () => {
                       My Orders
                     </Link>
                     <button
-                      onClick={logout}
+                      onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       Logout
@@ -253,6 +262,12 @@ const Header = () => {
                   >
                     My Orders
                   </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left text-red-600 hover:text-red-700 font-medium py-3 px-4 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+                  >
+                    Logout
+                  </button>
                 </>
               ) : (
                 <Link

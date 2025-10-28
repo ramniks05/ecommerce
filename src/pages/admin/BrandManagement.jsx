@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { brandService, fileService } from '../../services/supabaseService';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import Modal from '../../components/Modal';
 import { FiPlus, FiEdit, FiTrash2, FiImage, FiEye, FiEyeOff, FiStar, FiExternalLink, FiX } from 'react-icons/fi';
 
 const BrandManagement = () => {
@@ -25,11 +27,17 @@ const BrandManagement = () => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    loadBrands();
+    const timeoutId = setTimeout(() => setLoading(false), 4000);
+    loadBrands().finally(() => clearTimeout(timeoutId));
   }, []);
 
   const loadBrands = async () => {
     try {
+      if (!isSupabaseConfigured) {
+        console.log('[BrandManagement] Supabase not configured - using empty list');
+        setBrands([]);
+        return;
+      }
       const { data, error } = await brandService.getBrands();
       if (error) throw error;
       setBrands(data || []);
@@ -331,10 +339,9 @@ const BrandManagement = () => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+      <Modal open={showModal} onClose={() => setShowModal(false)}>
+        <div className="p-5">
+          <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingBrand ? 'Edit Brand' : 'Add New Brand'}
@@ -525,8 +532,7 @@ const BrandManagement = () => {
               </form>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 };

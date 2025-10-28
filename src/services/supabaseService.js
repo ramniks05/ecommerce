@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 // =============================================
 // AUTHENTICATION SERVICES
@@ -224,6 +224,11 @@ export const bannerService = {
 export const categoryService = {
   // Get all categories
   async getCategories() {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_categories');
+      const list = raw ? JSON.parse(raw) : [];
+      return { data: list, error: null };
+    }
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -253,6 +258,15 @@ export const categoryService = {
 
   // Create category
   async createCategory(categoryData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_categories');
+      const list = raw ? JSON.parse(raw) : [];
+      const now = new Date().toISOString();
+      const newItem = { id: `demo-category-${Date.now()}`, created_at: now, updated_at: now, ...categoryData };
+      const updated = [newItem, ...list];
+      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      return { data: newItem, error: null };
+    }
     const { data, error } = await supabase
       .from('categories')
       .insert(categoryData)
@@ -263,6 +277,14 @@ export const categoryService = {
 
   // Update category
   async updateCategory(id, categoryData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_categories');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.map(c => (c.id === id ? { ...c, ...categoryData, updated_at: new Date().toISOString() } : c));
+      const data = updated.find(c => c.id === id) || null;
+      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      return { data, error: null };
+    }
     const { data, error } = await supabase
       .from('categories')
       .update(categoryData)
@@ -274,6 +296,13 @@ export const categoryService = {
 
   // Delete category
   async deleteCategory(id) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_categories');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.filter(c => c.id !== id);
+      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      return { error: null };
+    }
     const { error } = await supabase
       .from('categories')
       .delete()
@@ -289,6 +318,11 @@ export const categoryService = {
 export const brandService = {
   // Get all brands
   async getBrands() {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_brands');
+      const list = raw ? JSON.parse(raw) : [];
+      return { data: list, error: null };
+    }
     const { data, error } = await supabase
       .from('brands')
       .select('*')
@@ -339,6 +373,15 @@ export const brandService = {
 
   // Create brand
   async createBrand(brandData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_brands');
+      const list = raw ? JSON.parse(raw) : [];
+      const now = new Date().toISOString();
+      const newItem = { id: `demo-brand-${Date.now()}`, created_at: now, updated_at: now, ...brandData };
+      const updated = [newItem, ...list];
+      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      return { data: newItem, error: null };
+    }
     const { data, error } = await supabase
       .from('brands')
       .insert(brandData)
@@ -349,6 +392,14 @@ export const brandService = {
 
   // Update brand
   async updateBrand(id, brandData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_brands');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.map(b => (b.id === id ? { ...b, ...brandData, updated_at: new Date().toISOString() } : b));
+      const data = updated.find(b => b.id === id) || null;
+      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      return { data, error: null };
+    }
     const { data, error } = await supabase
       .from('brands')
       .update(brandData)
@@ -360,6 +411,13 @@ export const brandService = {
 
   // Delete brand
   async deleteBrand(id) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_brands');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.filter(b => b.id !== id);
+      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      return { error: null };
+    }
     const { error } = await supabase
       .from('brands')
       .delete()
@@ -375,6 +433,11 @@ export const brandService = {
 export const productService = {
   // Get all products with filters
   async getProducts(filters = {}) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_products');
+      const list = raw ? JSON.parse(raw) : [];
+      return { data: list, error: null, count: list.length };
+    }
     let query = supabase
       .from('products')
       .select(`
@@ -495,6 +558,15 @@ export const productService = {
 
   // Create product
   async createProduct(productData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_products');
+      const list = raw ? JSON.parse(raw) : [];
+      const now = new Date().toISOString();
+      const newItem = { id: `demo-product-${Date.now()}`, created_at: now, updated_at: now, ...productData };
+      const updated = [newItem, ...list];
+      localStorage.setItem('demo_products', JSON.stringify(updated));
+      return { data: newItem, error: null };
+    }
     const { data, error } = await supabase
       .from('products')
       .insert(productData)
@@ -505,6 +577,14 @@ export const productService = {
 
   // Update product
   async updateProduct(id, productData) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_products');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.map(p => (p.id === id ? { ...p, ...productData, updated_at: new Date().toISOString() } : p));
+      const data = updated.find(p => p.id === id) || null;
+      localStorage.setItem('demo_products', JSON.stringify(updated));
+      return { data, error: null };
+    }
     const { data, error } = await supabase
       .from('products')
       .update(productData)
@@ -516,6 +596,13 @@ export const productService = {
 
   // Delete product
   async deleteProduct(id) {
+    if (!isSupabaseConfigured) {
+      const raw = localStorage.getItem('demo_products');
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.filter(p => p.id !== id);
+      localStorage.setItem('demo_products', JSON.stringify(updated));
+      return { error: null };
+    }
     const { error } = await supabase
       .from('products')
       .delete()
@@ -856,6 +943,11 @@ export const analyticsService = {
 export const fileService = {
   // Upload file to storage
   async uploadFile(bucket, file, fileName, options = {}) {
+    if (!isSupabaseConfigured) {
+      // In demo mode, return a temporary object URL to allow previews
+      const objectUrl = URL.createObjectURL(file);
+      return { data: { path: objectUrl }, error: null };
+    }
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, options);
@@ -864,6 +956,10 @@ export const fileService = {
 
   // Get public URL
   getPublicUrl(bucket, fileName) {
+    if (!isSupabaseConfigured) {
+      // fileName will already be an object URL in demo mode
+      return fileName;
+    }
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(fileName);
