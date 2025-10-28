@@ -10,4 +10,10 @@ export default defineConfig({
     strictPort: false,
     open: true,
   },
+  preview: {
+    // For production preview: serve SPA fallback
+    // Vercel uses vercel.json rewrites; this helps local preview
+    host: '127.0.0.1',
+    port: 4173,
+  }
 })
