@@ -66,35 +66,46 @@ const ProductsManagement = () => {
 
   const loadData = async () => {
     try {
-      const [productsRes, brandsRes, categoriesRes, attributesRes] = await Promise.all([
+      // Fetch core lists first (products, brands, categories)
+      const [productsRes, brandsRes, categoriesRes] = await Promise.all([
         productService.getProducts(),
         brandService.getBrands(),
-        categoryService.getCategoriesWithHierarchy(),
-        attributeService.getAttributes()
+        categoryService.getCategoriesWithHierarchy()
       ]);
 
-      if (productsRes.error) throw productsRes.error;
-      if (brandsRes.error) throw brandsRes.error;
-      if (categoriesRes.error) throw categoriesRes.error;
-      if (attributesRes.error) throw attributesRes.error;
+      if (productsRes?.error) console.error('Products load error:', productsRes.error);
+      if (brandsRes?.error) console.error('Brands load error:', brandsRes.error);
+      if (categoriesRes?.error) console.error('Categories load error:', categoriesRes.error);
 
-      setProducts(productsRes.data || []);
-      setBrands(brandsRes.data || []);
-      setCategories(categoriesRes.data || []);
-      setAttributes(attributesRes.data || []);
+      setProducts(productsRes?.data || []);
+      setBrands(brandsRes?.data || []);
+      setCategories(categoriesRes?.data || []);
 
-      // Load attribute values for each attribute
-      const valuesPromises = (attributesRes.data || []).map(async (attr) => {
-        const { data: values } = await attributeService.getAttributeValues(attr.id);
-        return { attributeId: attr.id, values: values || [] };
-      });
-      
-      const valuesResults = await Promise.all(valuesPromises);
-      const valuesMap = {};
-      valuesResults.forEach(({ attributeId, values }) => {
-        valuesMap[attributeId] = values;
-      });
-      setAttributeValues(valuesMap);
+      // Fetch attributes separately; don't block brand/category dropdowns if this fails
+      try {
+        const attributesRes = await attributeService.getAttributes();
+        if (attributesRes?.error) {
+          console.warn('Attributes load error:', attributesRes.error?.message || attributesRes.error);
+          setAttributes([]);
+          setAttributeValues({});
+        } else {
+          setAttributes(attributesRes.data || []);
+          const valuesPromises = (attributesRes.data || []).map(async (attr) => {
+            const { data: values } = await attributeService.getAttributeValues(attr.id);
+            return { attributeId: attr.id, values: values || [] };
+          });
+          const valuesResults = await Promise.all(valuesPromises);
+          const valuesMap = {};
+          valuesResults.forEach(({ attributeId, values }) => {
+            valuesMap[attributeId] = values;
+          });
+          setAttributeValues(valuesMap);
+        }
+      } catch (attrErr) {
+        console.warn('Attributes fetch failed:', attrErr?.message || attrErr);
+        setAttributes([]);
+        setAttributeValues({});
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -115,10 +126,50 @@ const ProductsManagement = () => {
     setUploading(true);
 
     try {
+      // Normalize payload to match DB schema
+      const grouped = formData.image_groups || {};
+      const groupedAll = [
+        ...(grouped.main || []),
+        ...(grouped.gallery || []),
+        ...(grouped.thumbnails || []),
+        ...(grouped.lifestyle || []),
+        ...(grouped.detail || [])
+      ];
+
+      const images = Array.from(new Set([...(formData.images || []), ...groupedAll]));
+
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+        brand_id: formData.brand_id || null,
+        category_id: formData.category_id || null,
+        sku: formData.sku || null,
+        price: formData.price === '' ? null : Number(formData.price),
+        original_price: formData.original_price === '' ? null : Number(formData.original_price),
+        cost_price: formData.cost_price === '' ? null : Number(formData.cost_price),
+        discount_percentage: Number(formData.discount_percentage) || 0,
+        stock_quantity: Number(formData.stock_quantity) || 0,
+        min_stock_level: Number(formData.min_stock_level) || 0,
+        weight: formData.weight === '' ? null : Number(formData.weight),
+        dimensions: formData.dimensions || null,
+        images,
+        description: formData.description || null,
+        short_description: formData.short_description || null,
+        features: formData.features || [],
+        specifications: formData.specifications || {},
+        tags: formData.tags || [],
+        is_featured: !!formData.is_featured,
+        is_new: !!formData.is_new,
+        is_bestseller: !!formData.is_bestseller,
+        is_active: !!formData.is_active,
+        meta_title: formData.meta_title || null,
+        meta_description: formData.meta_description || null,
+      };
+
       if (editingProduct) {
-        await productService.updateProduct(editingProduct.id, formData);
+        await productService.updateProduct(editingProduct.id, payload);
       } else {
-        await productService.createProduct(formData);
+        await productService.createProduct(payload);
       }
       
       setShowModal(false);
@@ -297,7 +348,12 @@ const ProductsManagement = () => {
     
     setUploading(true);
     try {
-      const uploadPromises = Array.from(files).map(file => fileService.uploadFile(file, 'products'));
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileName = `product-${groupType}-${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
+        const { data, error } = await fileService.uploadFile('product-images', file, fileName);
+        if (error) throw error;
+        return fileService.getPublicUrl('product-images', data.path);
+      });
       const uploadedUrls = await Promise.all(uploadPromises);
       
       setFormData(prev => ({
@@ -714,14 +770,15 @@ const ProductsManagement = () => {
                     >
                       <option value="">Select Category</option>
                       {categories.map(category => (
-                        <React.Fragment key={category.id}>
+                        <>
+                          {/* parent */}
                           <option value={category.id}>{category.name}</option>
                           {category.children && category.children.map(subcategory => (
                             <option key={subcategory.id} value={subcategory.id}>
                               &nbsp;&nbsp;└ {subcategory.name}
                             </option>
                           ))}
-                        </React.Fragment>
+                        </>
                       ))}
                     </select>
                   </div>

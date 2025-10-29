@@ -163,18 +163,20 @@ const BrandManagement = () => {
 
     try {
       const fileName = `brand-${Date.now()}-${type}.${file.name.split('.').pop()}`;
+      const bucketName = type === 'logo' ? 'brand-logos' : 'brand-heroes';
+      
       const { data, error } = await fileService.uploadFile(
-        type === 'logo' ? 'brand-logos' : 'brand-heroes', 
+        bucketName, 
         file, 
         fileName
       );
       
-      if (error) throw error;
+      if (error) {
+        console.error(`Upload error for ${type}:`, error);
+        throw error;
+      }
       
-      const publicUrl = fileService.getPublicUrl(
-        type === 'logo' ? 'brand-logos' : 'brand-heroes', 
-        data.path
-      );
+      const publicUrl = fileService.getPublicUrl(bucketName, data.path);
       
       if (type === 'logo') {
         setFormData(prev => ({ ...prev, logo_url: publicUrl }));
@@ -182,7 +184,8 @@ const BrandManagement = () => {
         setFormData(prev => ({ ...prev, hero_image_url: publicUrl }));
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error(`Error uploading ${type} image:`, error);
+      alert(`Error uploading ${type} image: ${error.message}`);
     }
   };
 
@@ -216,13 +219,6 @@ const BrandManagement = () => {
 
   return (
     <div className="p-6">
-      {/* Debug: Show modal state */}
-      {showModal && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
-          Modal is {showModal ? 'OPEN' : 'CLOSED'}
-        </div>
-      )}
-      
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Brand Management</h1>
@@ -230,11 +226,9 @@ const BrandManagement = () => {
         </div>
         <button
           onClick={() => {
-            console.log('Add Brand button clicked');
             resetForm();
             setEditingBrand(null);
             setShowModal(true);
-            console.log('Modal should be open now, showModal:', true);
           }}
           className="btn-primary flex items-center gap-2"
         >
@@ -244,18 +238,18 @@ const BrandManagement = () => {
       </div>
 
       {/* Brands Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {brands.map((brand) => (
-          <div key={brand.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="relative">
+          <div key={brand.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div className="brand-card-container">
               {brand.hero_image_url ? (
                 <img
                   src={brand.hero_image_url}
                   alt={brand.name}
-                  className="w-full h-48 object-cover"
+                  className="brand-card-image"
                 />
               ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                   <FiImage size={48} className="text-gray-400" />
                 </div>
               )}

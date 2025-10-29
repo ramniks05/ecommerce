@@ -31,6 +31,22 @@ const AdminLogin = () => {
             .single();
 
           if (!dbError && adminRow) {
+            // Ensure a user_profiles row exists and mark as admin for RLS policies
+            try {
+              await supabase
+                .from('user_profiles')
+                .upsert({
+                  id: data.user.id, // matches auth.users.id per schema
+                  first_name: adminRow.name?.split(' ')[0] || null,
+                  last_name: adminRow.name?.split(' ').slice(1).join(' ') || null,
+                  is_admin: true,
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                });
+            } catch (e) {
+              // non-fatal; continue login even if profile upsert fails
+              console.warn('Admin profile upsert warning:', e?.message || e);
+            }
             const adminUser = {
               id: adminRow.id,
               email: adminRow.email,

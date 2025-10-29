@@ -39,4 +39,28 @@
   .card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
   }
+  
+  .brand-card-image {
+    @apply w-full h-full object-cover object-center;
+    min-height: 192px;
+    max-height: 192px;
+  }
+  
+  .brand-card-container {
+    @apply relative overflow-hidden;
+    height: 192px;
+    aspect-ratio: 16/9;
+  }
+
+  .category-card-image {
+    @apply w-full h-full object-cover object-center;
+    min-height: 192px;
+    max-height: 192px;
+  }
+
+  .category-card-container {
+    @apply relative overflow-hidden;
+    height: 192px;
+    aspect-ratio: 16/9;
+  }
 }

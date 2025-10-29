@@ -13,7 +13,7 @@ const CategoryManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
-    parent_id: '',
+    parent_id: null,
     description: '',
     image_url: '',
     hero_image_url: '',
@@ -55,10 +55,22 @@ const CategoryManagement = () => {
     setUploading(true);
 
     try {
+      const payload = {
+        ...formData,
+        parent_id: formData.parent_id ? formData.parent_id : null,
+        sort_order: Number(formData.sort_order) || 0,
+        image_url: formData.image_url || null,
+        hero_image_url: formData.hero_image_url || null,
+        tagline: formData.tagline || null,
+        story: formData.story || null,
+        meta_title: formData.meta_title || null,
+        meta_description: formData.meta_description || null,
+        description: formData.description || null,
+      };
       if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.id, formData);
+        await categoryService.updateCategory(editingCategory.id, payload);
       } else {
-        await categoryService.createCategory(formData);
+        await categoryService.createCategory(payload);
       }
       
       setShowModal(false);
@@ -77,7 +89,7 @@ const CategoryManagement = () => {
     setFormData({
       name: category.name || '',
       slug: category.slug || '',
-      parent_id: category.parent_id || '',
+      parent_id: category.parent_id || null,
       description: category.description || '',
       image_url: category.image_url || '',
       hero_image_url: category.hero_image_url || '',
@@ -115,7 +127,7 @@ const CategoryManagement = () => {
     setFormData({
       name: '',
       slug: '',
-      parent_id: '',
+      parent_id: null,
       description: '',
       image_url: '',
       hero_image_url: '',
@@ -214,21 +226,21 @@ const CategoryManagement = () => {
         </button>
       </div>
 
-      {/* Categories List with Hierarchy */}
-      <div className="space-y-6">
+      {/* Categories Grid (like Brands) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {categories.map((category) => (
-          <div key={category.id} className="space-y-3">
+          <div key={category.id}>
             {/* Parent Category */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="relative">
+            <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+              <div className="category-card-container">
                 {category.hero_image_url ? (
                   <img
                     src={category.hero_image_url}
                     alt={category.name}
-                    className="w-full h-48 object-cover"
+                    className="category-card-image"
                   />
                 ) : (
-                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                     <FiImage size={48} className="text-gray-400" />
                   </div>
                 )}
@@ -420,8 +432,11 @@ const CategoryManagement = () => {
                     Parent Category
                   </label>
                   <select
-                    value={formData.parent_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, parent_id: e.target.value }))}
+                    value={formData.parent_id || ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData(prev => ({ ...prev, parent_id: v === '' ? null : v }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Select Parent Category (Leave empty for main category)</option>
