@@ -1,18 +1,56 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBrandBySlug, getProductsByBrand } from '../data/mockData';
+import { brandService, productService, fileService } from '../services/supabaseService';
 import ProductCard from '../components/ProductCard';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiGrid, FiList } from 'react-icons/fi';
 
 const BrandDetail = () => {
   const { slug } = useParams();
-  const brand = getBrandBySlug(slug);
-  const products = getProductsByBrand(slug);
+  const [brand, setBrand] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('featured');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    const loadBrandData = async () => {
+      try {
+        const [brandsResult, productsResult] = await Promise.all([
+          brandService.getBrands(),
+          productService.getProducts()
+        ]);
+
+        if (brandsResult.data) {
+          const foundBrand = brandsResult.data.find(b => b.slug === slug);
+          setBrand(foundBrand);
+        }
+
+        if (productsResult.data) {
+          const brandProducts = productsResult.data.filter(p => p.brand?.slug === slug);
+          setProducts(brandProducts);
+        }
+      } catch (error) {
+        console.error('Error loading brand data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBrandData();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!brand) {
     return (
@@ -72,7 +110,7 @@ const BrandDetail = () => {
             <div className="flex items-center gap-6">
               <div className="bg-white rounded-xl p-3 shadow-lg flex-shrink-0">
                 <img
-                  src={brand.logo}
+                  src={fileService.getPublicUrl('brand-logos', brand.logo_url)}
                   alt={`${brand.name} logo`}
                   className="h-16 md:h-20 w-auto object-contain"
                 />

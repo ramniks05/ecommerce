@@ -1,12 +1,53 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { brands, categories, getFeaturedProducts, getNewProducts } from '../data/mockData';
+import { brandService, categoryService, productService, fileService } from '../services/supabaseService';
 import ProductCard from '../components/ProductCard';
 import BrandCard from '../components/BrandCard';
 import BrandSlider from '../components/BrandSlider';
 
 const Home = () => {
-  const featuredProducts = getFeaturedProducts();
-  const newProducts = getNewProducts();
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [brandsResult, categoriesResult, productsResult] = await Promise.all([
+          brandService.getBrands(),
+          categoryService.getCategories(),
+          productService.getProducts()
+        ]);
+
+        if (brandsResult.data) setBrands(brandsResult.data);
+        if (categoriesResult.data) setCategories(categoriesResult.data);
+        
+        if (productsResult.data) {
+          const products = productsResult.data;
+          setFeaturedProducts(products.filter(p => p.is_featured).slice(0, 8));
+          setNewProducts(products.filter(p => p.is_new).slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error loading home data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -39,7 +80,7 @@ const Home = () => {
                   className="flex-shrink-0 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300"
                 >
                   <img
-                    src={brand.logo}
+                    src={fileService.getPublicUrl('brand-logos', brand.logo_url)}
                     alt={brand.name}
                     className="h-12 w-20 object-contain"
                   />
@@ -93,7 +134,7 @@ const Home = () => {
               >
                 <div className="relative overflow-hidden">
                   <img
-                    src={category.image}
+                    src={fileService.getPublicUrl('category-images', category.image_url)}
                     alt={category.name}
                     className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -163,7 +204,7 @@ const Home = () => {
               >
                 <div className="relative overflow-hidden">
                   <img
-                    src={brand.heroImage}
+                    src={fileService.getPublicUrl('brand-heroes', brand.hero_image_url)}
                     alt={brand.name}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                   />

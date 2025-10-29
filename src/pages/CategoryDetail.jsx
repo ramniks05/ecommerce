@@ -1,11 +1,57 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { categories, products, brands } from '../data/mockData';
+import { categoryService, productService, brandService, fileService } from '../services/supabaseService';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiArrowRight, FiPackage, FiTrendingUp, FiAward } from 'react-icons/fi';
 
 const CategoryDetail = () => {
   const { slug } = useParams();
-  const category = categories.find(c => c.slug === slug);
+  const [category, setCategory] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategoryData = async () => {
+      try {
+        const [categoriesResult, productsResult, brandsResult] = await Promise.all([
+          categoryService.getCategories(),
+          productService.getProducts(),
+          brandService.getBrands()
+        ]);
+
+        if (categoriesResult.data) {
+          const foundCategory = categoriesResult.data.find(c => c.slug === slug);
+          setCategory(foundCategory);
+        }
+
+        if (productsResult.data) {
+          const categoryProducts = productsResult.data.filter(p => p.category?.slug === slug);
+          setProducts(categoryProducts);
+        }
+
+        if (brandsResult.data) {
+          setBrands(brandsResult.data);
+        }
+      } catch (error) {
+        console.error('Error loading category data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategoryData();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -18,15 +64,15 @@ const CategoryDetail = () => {
     );
   }
 
-  const categoryProducts = products.filter(p => p.categoryId === category.id);
-  const categoryBrands = [...new Set(categoryProducts.map(p => p.brandName))];
+  const categoryProducts = products.filter(p => p.category_id === category.id);
+  const categoryBrands = [...new Set(categoryProducts.map(p => p.brand?.name).filter(Boolean))];
 
   return (
     <div>
       {/* Hero Section */}
       <section className="relative h-[500px] overflow-hidden">
         <img
-          src={category.heroImage}
+          src={fileService.getPublicUrl('category-images', category.image_url)}
           alt={category.name}
           className="w-full h-full object-cover"
         />
@@ -72,7 +118,7 @@ const CategoryDetail = () => {
                   className="flex-shrink-0 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300"
                 >
                   <img
-                    src={brand.logo}
+                    src={fileService.getPublicUrl('brand-logos', brand.logo_url)}
                     alt={brand.name}
                     className="h-12 w-20 object-contain"
                   />

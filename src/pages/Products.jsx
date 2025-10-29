@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { products, searchProducts, brands } from '../data/mockData';
+import { productService, brandService, categoryService } from '../services/supabaseService';
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
 import Breadcrumb from '../components/Breadcrumb';
@@ -10,28 +10,60 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   
+  const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('featured');
   const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [productsResult, brandsResult, categoriesResult] = await Promise.all([
+          productService.getProducts(),
+          brandService.getBrands(),
+          categoryService.getCategories()
+        ]);
+
+        if (productsResult.data) setProducts(productsResult.data);
+        if (brandsResult.data) setBrands(brandsResult.data);
+        if (categoriesResult.data) setCategories(categoriesResult.data);
+      } catch (error) {
+        console.error('Error loading products data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    let result = searchQuery ? searchProducts(searchQuery) : [...products];
+    let result = searchQuery 
+      ? products.filter(p => 
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : [...products];
 
     // Apply brand filter
     if (filters.brands?.length > 0) {
-      result = result.filter(p => filters.brands.includes(p.brandId));
+      result = result.filter(p => filters.brands.includes(p.brand_id));
     }
 
     // Apply category filter
     if (filters.categories?.length > 0) {
-      result = result.filter(p => filters.categories.includes(p.categoryId));
+      result = result.filter(p => filters.categories.includes(p.category_id));
     }
 
     // Apply price filter
     if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
       result = result.filter(p => {
-        const price = p.price;
+        const price = parseFloat(p.price) || 0;
         const min = filters.priceMin || 0;
         const max = filters.priceMax || Infinity;
         return price >= min && price <= max;
@@ -40,25 +72,25 @@ const Products = () => {
 
     // Apply rating filter
     if (filters.rating) {
-      result = result.filter(p => p.rating >= filters.rating);
+      result = result.filter(p => (p.rating || 0) >= filters.rating);
     }
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         break;
       case 'price-high':
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
         break;
       case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
+        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'newest':
-        result.sort((a, b) => b.isNew - a.isNew);
+        result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         break;
       case 'popular':
-        result.sort((a, b) => b.reviewCount - a.reviewCount);
+        result.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
         break;
       default:
         break;
@@ -66,6 +98,16 @@ const Products = () => {
 
     return result;
   }, [products, sortBy, filters, searchQuery]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

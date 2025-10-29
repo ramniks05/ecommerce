@@ -1,11 +1,46 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { categories, products } from '../data/mockData';
+import { categoryService, productService, fileService } from '../services/supabaseService';
 import Breadcrumb from '../components/Breadcrumb';
 
 const Categories = () => {
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [categoriesResult, productsResult] = await Promise.all([
+          categoryService.getCategories(),
+          productService.getProducts()
+        ]);
+
+        if (categoriesResult.data) setCategories(categoriesResult.data);
+        if (productsResult.data) setProducts(productsResult.data);
+      } catch (error) {
+        console.error('Error loading categories data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const getCategoryProductCount = (categoryId) => {
-    return products.filter(p => p.categoryId === categoryId).length;
+    return products.filter(p => p.category_id === categoryId).length;
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -29,7 +64,7 @@ const Categories = () => {
             >
               <div className="relative overflow-hidden">
                 <img
-                  src={category.image}
+                  src={fileService.getPublicUrl('category-images', category.image_url)}
                   alt={category.name}
                   className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
