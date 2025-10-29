@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiChevronDown, FiChevronRight, FiEdit, FiEye, FiEyeOff, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import Modal from '../../components/Modal';
 import { attributeService } from '../../services/supabaseService';
@@ -48,14 +48,32 @@ const AttributeManagement = () => {
 
   const loadAttributes = async () => {
     try {
+      setLoading(true);
       const { data, error } = await attributeService.getAttributes();
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error loading attributes:', error);
+        alert(`Error loading attributes: ${error.message || 'Please check console for details'}`);
+        setAttributes([]);
+        setAttributeValues({});
+        return;
+      }
+      
       setAttributes(data || []);
       
       // Load values for each attribute
       const valuesPromises = (data || []).map(async (attr) => {
-        const { data: values } = await attributeService.getAttributeValues(attr.id);
-        return { attributeId: attr.id, values: values || [] };
+        try {
+          const { data: values, error: valError } = await attributeService.getAttributeValues(attr.id);
+          if (valError) {
+            console.warn(`Error loading values for attribute ${attr.id}:`, valError);
+            return { attributeId: attr.id, values: [] };
+          }
+          return { attributeId: attr.id, values: values || [] };
+        } catch (err) {
+          console.warn(`Error loading values for attribute ${attr.id}:`, err);
+          return { attributeId: attr.id, values: [] };
+        }
       });
       
       const valuesResults = await Promise.all(valuesPromises);
@@ -66,6 +84,9 @@ const AttributeManagement = () => {
       setAttributeValues(valuesMap);
     } catch (error) {
       console.error('Error loading attributes:', error);
+      alert(`Error loading attributes: ${error.message || 'Please check console for details'}`);
+      setAttributes([]);
+      setAttributeValues({});
     } finally {
       setLoading(false);
     }
@@ -74,18 +95,36 @@ const AttributeManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingAttribute) {
-        await attributeService.updateAttribute(editingAttribute.id, formData);
-      } else {
-        await attributeService.createAttribute(formData);
+      // Normalize payload to match DB schema
+      const payload = {
+        name: formData.name,
+        slug: formData.slug,
+        type: formData.type,
+        description: formData.description || null,
+        is_required: !!formData.is_required,
+        is_filterable: formData.is_filterable !== false,
+        is_active: formData.is_active !== false,
+        sort_order: Number(formData.sort_order) || 0,
+      };
+
+      const result = editingAttribute
+        ? await attributeService.updateAttribute(editingAttribute.id, payload)
+        : await attributeService.createAttribute(payload);
+
+      if (result.error) {
+        console.error('Error saving attribute:', result.error);
+        alert(`Error saving attribute: ${result.error.message || 'Please check console for details'}`);
+        return;
       }
       
       setShowModal(false);
       setEditingAttribute(null);
       resetForm();
       loadAttributes();
+      alert(editingAttribute ? 'Attribute updated successfully!' : 'Attribute created successfully!');
     } catch (error) {
       console.error('Error saving attribute:', error);
+      alert(`Error saving attribute: ${error.message || 'Please check console for details'}`);
     }
   };
 
@@ -93,23 +132,42 @@ const AttributeManagement = () => {
     e.preventDefault();
     try {
       const attributeId = editingValue?.attribute_id || editingAttribute?.id;
-      if (!attributeId) return;
+      if (!attributeId) {
+        alert('Please select an attribute first');
+        return;
+      }
 
-      if (editingValue) {
-        await attributeService.updateAttributeValue(editingValue.id, valueFormData);
-      } else {
-        await attributeService.createAttributeValue({
-          ...valueFormData,
-          attribute_id: attributeId
-        });
+      // Normalize payload
+      const payload = {
+        value: valueFormData.value,
+        label: valueFormData.label || null,
+        color: valueFormData.color || null,
+        image_url: valueFormData.image_url || null,
+        sort_order: Number(valueFormData.sort_order) || 0,
+        is_active: valueFormData.is_active !== false,
+      };
+
+      const result = editingValue
+        ? await attributeService.updateAttributeValue(editingValue.id, payload)
+        : await attributeService.createAttributeValue({
+            ...payload,
+            attribute_id: attributeId
+          });
+
+      if (result.error) {
+        console.error('Error saving attribute value:', result.error);
+        alert(`Error saving attribute value: ${result.error.message || 'Please check console for details'}`);
+        return;
       }
       
       setShowValueModal(false);
       setEditingValue(null);
       resetValueForm();
       loadAttributes();
+      alert(editingValue ? 'Attribute value updated successfully!' : 'Attribute value created successfully!');
     } catch (error) {
       console.error('Error saving attribute value:', error);
+      alert(`Error saving attribute value: ${error.message || 'Please check console for details'}`);
     }
   };
 
@@ -129,7 +187,10 @@ const AttributeManagement = () => {
   };
 
   const handleValueEdit = (value, attributeId) => {
-    setEditingValue(value);
+    setEditingValue({
+      ...value,
+      attribute_id: value.attribute_id || attributeId
+    });
     setEditingAttribute({ id: attributeId });
     setValueFormData({
       value: value.value || '',
@@ -334,8 +395,9 @@ const AttributeManagement = () => {
                         <button
                           onClick={() => {
                             setEditingAttribute(attribute);
-                            setShowValueModal(true);
+                            setEditingValue(null);
                             resetValueForm();
+                            setShowValueModal(true);
                           }}
                           className="text-blue-600 hover:text-blue-900"
                           title="Add Value"
@@ -518,8 +580,8 @@ const AttributeManagement = () => {
                 </label>
                 <input
                   type="number"
-                  value={formData.sort_order}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) }))}
+                  value={formData.sort_order || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sort_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -595,7 +657,7 @@ const AttributeManagement = () => {
                   </label>
                   <input
                     type="color"
-                    value={valueFormData.color}
+                    value={valueFormData.color || '#000000'}
                     onChange={(e) => setValueFormData(prev => ({ ...prev, color: e.target.value }))}
                     className="w-full h-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
@@ -621,8 +683,8 @@ const AttributeManagement = () => {
                   </label>
                   <input
                     type="number"
-                    value={valueFormData.sort_order}
-                    onChange={(e) => setValueFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) }))}
+                    value={valueFormData.sort_order || ''}
+                    onChange={(e) => setValueFormData(prev => ({ ...prev, sort_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
