@@ -20,15 +20,29 @@ export const initializeRazorpay = async (orderData, onSuccess, onFailure) => {
     return;
   }
 
+  if (!window.Razorpay) {
+    onFailure('Razorpay SDK not available on window');
+    return;
+  }
+
   // Razorpay configuration
-  const options = {
-    key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_XXXXX', // Your Razorpay Key ID
-    amount: Math.round(orderData.total * 100), // Amount in paise (₹1 = 100 paise)
+  const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  if (!keyId || keyId.includes('rzp_test_XXXXX')) {
+    onFailure('Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in environment.');
+    return;
+  }
+
+  const amountPaise = Math.max(100, Math.round((orderData.total || 0) * 100));
+
+  const useMockMode = (import.meta.env.VITE_RAZORPAY_MODE || '').toLowerCase() === 'mock';
+
+  const optionsBase = {
+    key: keyId, // Your Razorpay Key ID
+    amount: amountPaise, // Amount in paise (min ₹1)
     currency: 'INR',
     name: 'Catalix',
     description: `Order ${orderData.orderId}`,
     image: '/catalix-logo.svg',
-    order_id: orderData.razorpayOrderId, // This comes from backend
     handler: function (response) {
       // Payment successful
       onSuccess({
@@ -55,6 +69,11 @@ export const initializeRazorpay = async (orderData, onSuccess, onFailure) => {
     }
   };
 
+  // Only attach order_id when using a real backend-generated order
+  const options = (!useMockMode && orderData.razorpayOrderId)
+    ? { ...optionsBase, order_id: orderData.razorpayOrderId }
+    : optionsBase;
+
   const paymentObject = new window.Razorpay(options);
   paymentObject.open();
 };
@@ -68,18 +87,42 @@ export const verifyPaymentSignature = (razorpayData) => {
 };
 
 // Create Razorpay order (this should be backend API call)
-export const createRazorpayOrder = async (amount) => {
-  // In production, call your backend API:
-  // const response = await fetch('/api/payment/create-order', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ amount }),
-  // });
-  
-  // For now, return mock order
-  return {
-    id: `order_${Date.now()}`,
-    amount: amount * 100,
-    currency: 'INR',
-  };
+export const createRazorpayOrder = async (total) => {
+  const amountPaise = Math.max(100, Math.round(Number(total || 0) * 100));
+
+  // Prefer explicit base URL if provided
+  const explicitBase = import.meta.env.VITE_PUBLIC_BASE_URL;
+  const isVercel = typeof window !== 'undefined' && /vercel\.app$/i.test(window.location.host);
+  const base = (explicitBase && explicitBase.replace(/\/$/, '')) || (isVercel ? window.location.origin : '');
+
+  // If we don't have a server base in local dev, fall back to mock
+  if (!base) {
+    return {
+      id: `order_${Date.now()}`,
+      amount: amountPaise,
+      currency: 'INR',
+    };
+  }
+
+  try {
+    const res = await fetch(`${base}/api/razorpay/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: amountPaise, currency: 'INR' })
+    });
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
+    if (!res.ok) {
+      throw new Error(data?.error?.description || data?.error || 'Failed to create order');
+    }
+    return data;
+  } catch (err) {
+    // Fallback to mock in dev
+    return {
+      id: `order_${Date.now()}`,
+      amount: amountPaise,
+      currency: 'INR',
+    };
+  }
 };
 

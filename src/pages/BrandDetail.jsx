@@ -15,6 +15,35 @@ const BrandDetail = () => {
   const [sortBy, setSortBy] = useState('featured');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  const filteredProducts = useMemo(() => {
+    let filtered = [...products];
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => (p.category?.name || p.categories?.name || p.categoryName) === selectedCategory);
+    }
+
+    switch (sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        break;
+      case 'rating':
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+      default:
+        break;
+    }
+
+    return filtered;
+  }, [products, sortBy, selectedCategory]);
+
+  const brandCategories = ['all', ...new Set(products.map(p => p.category?.name || p.categories?.name || p.categoryName).filter(Boolean))];
+
   useEffect(() => {
     const loadBrandData = async () => {
       try {
@@ -23,13 +52,21 @@ const BrandDetail = () => {
           productService.getProducts()
         ]);
 
+        let foundBrand = null;
         if (brandsResult.data) {
-          const foundBrand = brandsResult.data.find(b => b.slug === slug);
+          foundBrand = brandsResult.data.find(b => b.slug === slug) || null;
           setBrand(foundBrand);
         }
 
         if (productsResult.data) {
-          const brandProducts = productsResult.data.filter(p => p.brand?.slug === slug);
+          const brandProducts = productsResult.data.filter(p => {
+            const nestedSlug = (p.brand?.slug || p.brands?.slug);
+            const nestedId = (p.brand?.id || p.brands?.id);
+            return (
+              nestedSlug === slug ||
+              (foundBrand?.id && (p.brand_id === foundBrand.id || nestedId === foundBrand.id))
+            );
+          });
           setProducts(brandProducts);
         }
       } catch (error) {
@@ -42,7 +79,12 @@ const BrandDetail = () => {
     loadBrandData();
   }, [slug]);
 
-  if (loading) {
+  const isLoading = loading;
+  const brandNotFound = !loading && !brand;
+
+  // moved above to keep hooks order consistent
+
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex items-center justify-center">
@@ -52,7 +94,7 @@ const BrandDetail = () => {
     );
   }
 
-  if (!brand) {
+  if (brandNotFound) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Brand Not Found</h1>
@@ -62,37 +104,6 @@ const BrandDetail = () => {
       </div>
     );
   }
-
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products];
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.categoryName === selectedCategory);
-    }
-
-    // Sort products
-    switch (sortBy) {
-      case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'newest':
-        filtered.sort((a, b) => b.isNew - a.isNew);
-        break;
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [products, sortBy, selectedCategory]);
-
-  const brandCategories = ['all', ...new Set(products.map(p => p.categoryName))];
 
   return (
     <div>
@@ -109,11 +120,21 @@ const BrandDetail = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="bg-white rounded-xl p-3 shadow-lg flex-shrink-0">
-                <img
-                  src={fileService.getPublicUrl('brand-logos', brand.logo_url)}
-                  alt={`${brand.name} logo`}
-                  className="h-16 md:h-20 w-auto object-contain"
-                />
+                {(() => {
+                  const raw = brand.logo_url || brand.logo || brand.image_url || '';
+                  const src = raw
+                    ? (String(raw).startsWith('http') || String(raw).includes('/storage/v1/object/public/')
+                        ? raw
+                        : fileService.getPublicUrl('brand-logos', raw))
+                    : '';
+                  return (
+                    <img
+                      src={src}
+                      alt={`${brand.name} logo`}
+                      className="h-16 md:h-20 w-auto object-contain"
+                    />
+                  );
+                })()}
               </div>
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-2">{brand.name}</h2>
@@ -122,11 +143,11 @@ const BrandDetail = () => {
             </div>
             <div className="flex gap-4">
               <div className="bg-white/20 backdrop-blur-sm px-4 md:px-6 py-3 rounded-xl text-center">
-                <div className="text-2xl md:text-3xl font-bold">{brand.productCount}</div>
+                <div className="text-2xl md:text-3xl font-bold">{brand.productCount || brand.product_count || 0}</div>
                 <div className="text-xs md:text-sm text-white/80">Products</div>
               </div>
               <div className="bg-white/20 backdrop-blur-sm px-4 md:px-6 py-3 rounded-xl text-center">
-                <div className="text-2xl md:text-3xl font-bold">{brand.founded}</div>
+                <div className="text-2xl md:text-3xl font-bold">{brand.founded || brand.founded_year || ''}</div>
                 <div className="text-xs md:text-sm text-white/80">Est.</div>
               </div>
             </div>

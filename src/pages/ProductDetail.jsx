@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { productService, attributeService } from '../services/supabaseService';
+import { productService, attributeService, fileService } from '../services/supabaseService';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../context/NotificationContext';
@@ -30,7 +30,7 @@ const ProductDetail = () => {
         const { data: products, error } = await productService.getProducts();
         if (error) throw error;
         
-        const foundProduct = products.find(p => p.slug === slug);
+        const foundProduct = products.find(p => p.slug === slug || String(p.id) === String(slug));
         if (foundProduct) {
           setProduct(foundProduct);
           
@@ -81,23 +81,38 @@ const ProductDetail = () => {
     );
   }
 
+  // Normalize image URL to public URL if needed
+  const toPublicImageUrl = (val) => {
+    if (!val) return '';
+    const s = String(val);
+    if (s.startsWith('http') || s.includes('/storage/v1/object/public/')) return s;
+    return fileService.getPublicUrl('product-images', s);
+  };
+
   // Get all images from grouped images
   const getAllImages = () => {
     const images = [];
     if (product.image_groups) {
       Object.values(product.image_groups).forEach(group => {
-        images.push(...group);
+        images.push(...group.map(g => toPublicImageUrl(g)));
       });
     }
     // Fallback to regular images if no grouped images
     if (images.length === 0 && product.images) {
-      images.push(...product.images);
+      images.push(...product.images.map(img => {
+        if (typeof img === 'string') return toPublicImageUrl(img);
+        return toPublicImageUrl(img?.url || img?.path || '');
+      }));
     }
     return images;
   };
 
   const allImages = getAllImages();
   const inWishlist = isInWishlist(product.id);
+  const stockQty = product.stock_quantity ?? product.stock ?? product.inventory ?? 0;
+  const inStock = Number(stockQty) > 0;
+  const productReviews = [];
+  const relatedProducts = [];
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -119,7 +134,7 @@ const ProductDetail = () => {
       <Breadcrumb
         items={[
           { label: 'Products', path: '/products' },
-          { label: product.categoryName, path: `/products?category=${product.categoryId}` },
+          { label: product.category?.name || product.categoryName || 'Category', path: `/products?category=${product.category_id || product.categoryId || ''}` },
           { label: product.name }
         ]}
       />
@@ -133,7 +148,7 @@ const ProductDetail = () => {
                 <img
                   src={allImages[selectedImage]}
                   alt={product.name}
-                  className="w-full h-[500px] object-cover"
+                  className="w-full h-[500px] object-contain bg-white"
                 />
                 {product.discount_percentage > 0 && (
                   <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-4 py-2 rounded">
@@ -160,7 +175,7 @@ const ProductDetail = () => {
                     <img
                       src={image}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-24 object-cover"
+                      className="w-full h-24 object-contain bg-white"
                     />
                   </button>
                 ))}
@@ -186,29 +201,31 @@ const ProductDetail = () => {
               <span className="text-4xl font-bold text-gray-900">
                 ₹{product.price}
               </span>
-              {product.original_price && (
+              {(product.original_price ?? product.mrp) && (
                 <span className="text-2xl text-gray-400 line-through">
-                  ₹{product.original_price}
+                  ₹{product.original_price ?? product.mrp}
                 </span>
               )}
             </div>
-            {product.discount_percentage > 0 && (
+            {(product.discount_percentage || (product.original_price && product.price)) && (
               <p className="text-green-600 font-medium mt-2">
-                You save ₹{(product.original_price - product.price).toFixed(2)} ({product.discount_percentage}% off)
+                {product.original_price && product.price ? (
+                  <>You save ₹{(Number(product.original_price) - Number(product.price)).toFixed(2)}</>
+                ) : null}
               </p>
             )}
           </div>
 
           {/* Description */}
           <p className="text-gray-700 mb-6 leading-relaxed">
-            {product.short_description || product.description}
+            {product.short_description || product.description || ''}
           </p>
 
           {/* Features */}
           <div className="mb-6">
             <h3 className="font-semibold text-gray-900 mb-3">Key Features:</h3>
             <ul className="space-y-2">
-              {product.features.map((feature, index) => (
+              {(product.features || []).map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -241,7 +258,7 @@ const ProductDetail = () => {
                 </button>
               </div>
               <span className="text-gray-600">
-                {product.inStock ? 'In Stock' : 'Out of Stock'}
+                {inStock ? `In Stock${Number.isFinite(Number(stockQty)) ? ` (${Number(stockQty)})` : ''}` : 'Out of Stock'}
               </span>
             </div>
           </div>
@@ -250,7 +267,7 @@ const ProductDetail = () => {
           <div className="flex gap-4 mb-8">
             <button
               onClick={handleAddToCart}
-              disabled={!product.inStock}
+              disabled={!inStock}
               className="btn-primary flex-1 flex items-center justify-center gap-2"
             >
               <FiShoppingCart size={20} />
@@ -445,7 +462,7 @@ const ProductDetail = () => {
       {relatedProducts.length > 0 && (
         <section className="mt-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-8">
-            More from {product.brandName}
+            More from {product.brand?.name || product.brandName || 'Brand'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {relatedProducts.map(relatedProduct => (

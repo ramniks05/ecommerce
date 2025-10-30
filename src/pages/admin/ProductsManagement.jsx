@@ -315,8 +315,15 @@ const ProductsManagement = () => {
     setUploading(true);
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
+        // Resize/compress to product spec before upload
+        let fileToUpload = file;
+        try {
+          const { processImage, IMAGE_SPECS } = await import('../../utils/imageUtils');
+          const blob = await processImage(file, IMAGE_SPECS.PRODUCT_IMAGE);
+          fileToUpload = new File([blob], file.name, { type: file.type });
+        } catch (_) {}
         const fileName = `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${file.name.split('.').pop()}`;
-        const { data, error } = await fileService.uploadFile('product-images', file, fileName);
+        const { data, error } = await fileService.uploadFile('product-images', fileToUpload, fileName);
         
         if (error) throw error;
         
@@ -349,8 +356,15 @@ const ProductsManagement = () => {
     setUploading(true);
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
+        // Resize/compress to product spec before upload
+        let fileToUpload = file;
+        try {
+          const { processImage, IMAGE_SPECS } = await import('../../utils/imageUtils');
+          const blob = await processImage(file, IMAGE_SPECS.PRODUCT_IMAGE);
+          fileToUpload = new File([blob], file.name, { type: file.type });
+        } catch (_) {}
         const fileName = `product-${groupType}-${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
-        const { data, error } = await fileService.uploadFile('product-images', file, fileName);
+        const { data, error } = await fileService.uploadFile('product-images', fileToUpload, fileName);
         if (error) throw error;
         return fileService.getPublicUrl('product-images', data.path);
       });

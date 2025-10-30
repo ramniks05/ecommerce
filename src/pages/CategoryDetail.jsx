@@ -20,13 +20,21 @@ const CategoryDetail = () => {
           brandService.getBrands()
         ]);
 
+        let foundCategory = null;
         if (categoriesResult.data) {
-          const foundCategory = categoriesResult.data.find(c => c.slug === slug);
+          foundCategory = categoriesResult.data.find(c => c.slug === slug) || null;
           setCategory(foundCategory);
         }
 
         if (productsResult.data) {
-          const categoryProducts = productsResult.data.filter(p => p.category?.slug === slug);
+          const categoryProducts = productsResult.data.filter(p => {
+            const nestedSlug = (p.category?.slug || p.categories?.slug);
+            const nestedId = (p.category?.id || p.categories?.id);
+            return (
+              nestedSlug === slug ||
+              (foundCategory?.id && (p.category_id === foundCategory.id || nestedId === foundCategory.id))
+            );
+          });
           setProducts(categoryProducts);
         }
 
@@ -64,18 +72,24 @@ const CategoryDetail = () => {
     );
   }
 
-  const categoryProducts = products.filter(p => p.category_id === category.id);
+  const categoryProducts = products.filter(p => (p.category_id === category.id) || (p.categories?.id === category.id));
   const categoryBrands = [...new Set(categoryProducts.map(p => p.brand?.name).filter(Boolean))];
 
   return (
     <div>
       {/* Hero Section */}
       <section className="relative h-[500px] overflow-hidden">
-        <img
-          src={fileService.getPublicUrl('category-images', category.image_url)}
-          alt={category.name}
-          className="w-full h-full object-cover"
-        />
+        {category.image_url ? (
+          <img
+            src={category.image_url.startsWith('http') || category.image_url.includes('/storage/v1/object/public/')
+              ? category.image_url
+              : fileService.getPublicUrl('category-images', category.image_url)}
+            alt={category.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40 flex items-center">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl text-white">
@@ -117,11 +131,17 @@ const CategoryDetail = () => {
                   to={`/brands/${brand.slug}`}
                   className="flex-shrink-0 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300"
                 >
-                  <img
-                    src={fileService.getPublicUrl('brand-logos', brand.logo_url)}
-                    alt={brand.name}
-                    className="h-12 w-20 object-contain"
-                  />
+                  {brand.logo_url ? (
+                    <img
+                      src={brand.logo_url.startsWith('http') || brand.logo_url.includes('/storage/v1/object/public/')
+                        ? brand.logo_url
+                        : fileService.getPublicUrl('brand-logos', brand.logo_url)}
+                      alt={brand.name}
+                      className="h-12 w-20 object-contain"
+                    />
+                  ) : (
+                    <div className="h-12 w-20 bg-white/30 rounded" />
+                  )}
                 </Link>
               ))}
             </div>

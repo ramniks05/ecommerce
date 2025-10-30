@@ -29,7 +29,7 @@ const Categories = () => {
   }, []);
 
   const getCategoryProductCount = (categoryId) => {
-    return products.filter(p => p.category_id === categoryId).length;
+    return products.filter(p => (p.category_id === categoryId) || (p.categories?.id === categoryId)).length;
   };
 
   if (loading) {
@@ -63,11 +63,19 @@ const Categories = () => {
               className="card group hover:shadow-lg transition-all duration-300"
             >
               <div className="relative overflow-hidden">
-                <img
-                  src={fileService.getPublicUrl('category-images', category.image_url)}
-                  alt={category.name}
-                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                />
+                {category.image_url ? (
+                  <img
+                    src={category.image_url.startsWith('http') || category.image_url.includes('/storage/v1/object/public/')
+                      ? category.image_url
+                      : fileService.getPublicUrl('category-images', category.image_url)}
+                    alt={category.name}
+                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
                   <div className="p-6 w-full">
                     <h3 className="text-white font-bold text-2xl mb-2">

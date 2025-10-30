@@ -46,18 +46,18 @@ const Products = () => {
       ? products.filter(p => 
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+          (p.brand?.name || p.brands?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
         )
       : [...products];
 
     // Apply brand filter
     if (filters.brands?.length > 0) {
-      result = result.filter(p => filters.brands.includes(p.brand_id));
+      result = result.filter(p => filters.brands.includes(p.brand_id) || filters.brands.includes(p.brands?.id));
     }
 
     // Apply category filter
     if (filters.categories?.length > 0) {
-      result = result.filter(p => filters.categories.includes(p.category_id));
+      result = result.filter(p => filters.categories.includes(p.category_id) || filters.categories.includes(p.categories?.id));
     }
 
     // Apply price filter
