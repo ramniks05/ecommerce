@@ -1,19 +1,39 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { orders } from '../data/mockData';
+import { orderService, fileService } from '../services/supabaseService';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiPackage } from 'react-icons/fi';
 
 const Orders = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [userOrders, setUserOrders] = useState([]);
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await orderService.getUserOrders(user.id);
+        if (!active) return;
+        if (error) {
+          setUserOrders([]);
+        } else {
+          setUserOrders(Array.isArray(data) ? data : []);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [user, navigate]);
 
-  const userOrders = orders.filter(order => order.userId === user.id);
+  if (!user) return null;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -30,7 +50,7 @@ const Orders = () => {
     }
   };
 
-  if (userOrders.length === 0) {
+  if (!loading && userOrders.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16">
         <Breadcrumb items={[{ label: 'My Orders' }]} />
@@ -54,39 +74,53 @@ const Orders = () => {
 
       <h1 className="text-4xl font-bold text-gray-900 mb-8">My Orders</h1>
 
-      <div className="space-y-6">
+      {loading ? (
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto" />
+        </div>
+      ) : (
+        <div className="space-y-6">
         {userOrders.map(order => (
           <div key={order.id} className="card p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  Order #{order.id}
+                  Order #{order.order_number || order.id}
                 </h3>
-                <p className="text-gray-600">Placed on {order.date}</p>
+                <p className="text-gray-600">Placed on {new Date(order.created_at).toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-4">
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status || 'processing')}`}>
+                  {(order.status || 'processing').replace(/^./, c => c.toUpperCase())}
                 </span>
                 <span className="text-xl font-bold text-gray-900">
-                  ₹{order.total.toFixed(2)}
+                  ₹{Number(order.total_amount || order.total || 0).toFixed(2)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-4">
-              {order.items.map((item, index) => (
-                <div key={index} className="flex gap-4">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
+              {(order.order_items || []).map((item) => (
+                <div key={item.id} className="flex gap-4">
+                  {(() => {
+                    const img = item.product_image || (item.products?.images?.[0]) || '';
+                    if (!img) return <div className="w-20 h-20 rounded-lg bg-gray-100" />;
+                    const src = (String(img).startsWith('http') || String(img).includes('/storage/v1/object/public/'))
+                      ? img
+                      : fileService.getPublicUrl('product-images', img);
+                    return (
+                      <img
+                        src={src}
+                        alt={item.products?.name || item.product_name || ''}
+                        className="w-20 h-20 object-cover rounded-lg bg-white"
+                      />
+                    );
+                  })()}
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                    <h4 className="font-semibold text-gray-900">{item.products?.name || item.product_name || ''}</h4>
                     <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                     <p className="text-sm font-semibold text-gray-900 mt-1">
-                      ₹{item.price.toFixed(2)}
+                      ₹{Number((item.price ?? item.unit_price) || 0).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -95,9 +129,19 @@ const Orders = () => {
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex flex-col md:flex-row gap-4">
-                <button className="btn-primary flex-1">Track Order</button>
-                <button className="btn-secondary flex-1">View Details</button>
-                {order.status === 'delivered' && (
+                <button
+                  className="btn-primary flex-1"
+                  onClick={() => navigate(`/orders/${order.order_number || order.id}`)}
+                >
+                  Track Order
+                </button>
+                <button
+                  className="btn-secondary flex-1"
+                  onClick={() => navigate(`/orders/${order.order_number || order.id}`)}
+                >
+                  View Details
+                </button>
+                {(order.status || '') === 'delivered' && (
                   <button className="btn-outline flex-1">Buy Again</button>
                 )}
               </div>
@@ -105,6 +149,7 @@ const Orders = () => {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 };

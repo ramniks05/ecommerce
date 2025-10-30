@@ -20,6 +20,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import OrderConfirmation from './pages/OrderConfirmation';
 import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
 import ProductDetail from './pages/ProductDetail';
 import Products from './pages/Products';
 import Profile from './pages/Profile';
@@ -71,6 +72,7 @@ function AppContent() {
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/orders" element={<Orders />} />
+                  <Route path="/orders/:orderId" element={<OrderDetail />} />
                   <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                   
                   {/* Admin Routes */}

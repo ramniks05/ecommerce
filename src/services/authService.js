@@ -20,24 +20,38 @@ export const authService = {
 
       if (authError) throw authError;
 
-      // Create user profile in database
-      if (authData.user) {
+      // Ensure we have a session (email confirmation may be enabled)
+      let { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        // Try to sign in immediately to obtain a session (if confirmations are disabled)
+        try {
+          await supabase.auth.signInWithPassword({ email, password });
+          ({ data: sessionData } = await supabase.auth.getSession());
+        } catch (_) {}
+      }
+
+      // Create user profile in database (only if we have a valid session so RLS passes)
+      if (sessionData?.session?.user) {
+        const authedUser = sessionData.session.user;
         const { error: profileError } = await supabase
           .from('user_profiles')
-          .insert([
+          .upsert([
             {
-              user_id: authData.user.id,
-              email: authData.user.email,
+              id: authedUser.id,
               first_name: userData.first_name || userData.firstName,
               last_name: userData.last_name || userData.lastName,
               phone: userData.phone,
               phone_verified: userData.phone_verified || false,
+              is_active: true,
             },
-          ]);
+          ], { onConflict: 'id' });
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
         }
+      } else {
+        // No session yet; profile will be upserted on first successful login
+        console.log('No session after signup; will create profile on first login');
       }
 
       return { data: authData, error: null };
@@ -57,21 +71,32 @@ export const authService = {
 
       if (error) throw error;
 
-      // Fetch user profile
+      // Fetch or create user profile
       if (data.user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profErr } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('user_id', data.user.id)
+          .eq('id', data.user.id)
           .single();
 
-        return { 
-          data: { 
-            ...data, 
-            profile 
-          }, 
-          error: null 
-        };
+        if (profErr) {
+          const { data: created } = await supabase
+            .from('user_profiles')
+            .upsert([
+              {
+                id: data.user.id,
+                first_name: data.user.user_metadata?.full_name?.split(' ')[0] || '',
+                last_name: data.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+                is_active: true,
+              }
+            ], { onConflict: 'id' })
+            .select()
+            .single();
+
+          return { data: { ...data, profile: created }, error: null };
+        }
+
+        return { data: { ...data, profile }, error: null };
       }
 
       return { data, error: null };
@@ -203,7 +228,7 @@ export const authService = {
         const { data: profile } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
         return { 
@@ -244,7 +269,7 @@ export const authService = {
       const { data, error } = await supabase
         .from('user_profiles')
         .update(updates)
-        .eq('user_id', userId)
+        .eq('id', userId)
         .select()
         .single();
 

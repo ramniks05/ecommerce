@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import LoginOptions from '../components/LoginOptions';
@@ -10,6 +10,8 @@ const Login = () => {
   const { login, setUser } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
 
   const handleEmailLogin = async (email, password) => {
     try {
@@ -26,7 +28,7 @@ const Login = () => {
         
         if (result.success) {
           showNotification('Login successful!', 'success');
-          navigate('/');
+          navigate(redirectTo);
           return { success: true };
         } else {
           return { success: false, error: result.error };
@@ -58,7 +60,7 @@ const Login = () => {
         }
         
         showNotification('Login successful!', 'success');
-        navigate('/');
+        navigate(redirectTo);
         return { success: true };
       }
       
@@ -86,7 +88,7 @@ const Login = () => {
       login(phone + '@mobile.catalix.com', 'mobile-login'); // Using phone as email for demo
       
       showNotification('Mobile login successful!', 'success');
-      navigate('/');
+      navigate(redirectTo);
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Mobile login failed. Please try again.' };

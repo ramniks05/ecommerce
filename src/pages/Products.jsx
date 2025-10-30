@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { productService, brandService, categoryService } from '../services/supabaseService';
+import { productService, brandService, categoryService, fileService } from '../services/supabaseService';
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
 import Breadcrumb from '../components/Breadcrumb';
@@ -38,7 +38,9 @@ const Products = () => {
       }
     };
 
+    const timeout = setTimeout(() => setLoading(false), 5000);
     loadData();
+    return () => clearTimeout(timeout);
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -133,7 +135,13 @@ const Products = () => {
                   className="flex-shrink-0 bg-white rounded-lg p-2 hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   <img
-                    src={brand.logo}
+                    src={(() => {
+                      const raw = brand.logo_url || brand.logo || '';
+                      if (!raw) return '';
+                      return (String(raw).startsWith('http') || String(raw).includes('/storage/v1/object/public/'))
+                        ? raw
+                        : fileService.getPublicUrl('brand-logos', raw);
+                    })()}
                     alt={brand.name}
                     className="h-10 md:h-12 w-16 md:w-20 object-contain"
                   />

@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { initializeRazorpay, createRazorpayOrder } from '../utils/razorpay';
+import { orderService } from '../services/supabaseService';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiCheck } from 'react-icons/fi';
 
@@ -12,6 +14,7 @@ const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const { showNotification } = useNotification();
+  const location = useLocation();
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -46,6 +49,14 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Require login before proceeding
+    if (!user) {
+      showNotification('Please login to continue checkout', 'error');
+      const current = location.pathname + (location.search || '');
+      navigate(`/login?redirect=${encodeURIComponent(current)}`);
+      return;
+    }
+
     if (step === 1) {
       // Validate shipping info
       if (!formData.firstName || !formData.lastName || !formData.email || !formData.address) {
@@ -91,11 +102,71 @@ const Checkout = () => {
           await initializeRazorpay(
             orderData,
             // Success callback
-            (paymentResponse) => {
-              console.log('Payment successful:', paymentResponse);
-              clearCart();
-              showNotification('Payment successful! Order placed.');
-              navigate(`/order-confirmation/${orderId}`);
+            async (paymentResponse) => {
+              try {
+                // Persist order
+                const orderPayload = {
+                  id: orderId,
+                  user_id: user.id,
+                  order_number: orderId,
+                  status: 'confirmed',
+                  payment_status: 'paid',
+                  payment_method: 'razorpay',
+                  payment_id: paymentResponse.razorpay_payment_id || null,
+                  subtotal: subtotal,
+                  shipping_cost: shipping,
+                  tax_amount: tax,
+                  total_amount: total,
+                  currency: 'INR',
+                  shipping_address: {
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    zipCode: formData.zipCode,
+                    country: formData.country,
+                    phone: formData.phone,
+                    email: formData.email,
+                  },
+                };
+
+                await orderService.createOrder(orderPayload);
+
+                // Persist order items (Supabase or demo)
+                const itemsForDb = cartItems.map(ci => ({
+                  user_id: user.id,
+                  order_id: orderId,
+                  product_id: ci.id,
+                  product_name: ci.name,
+                  product_image: Array.isArray(ci.images) && ci.images.length > 0 ? ci.images[0] : (ci.image || null),
+                  quantity: ci.quantity,
+                  unit_price: ci.price,
+                  total_price: Number(ci.price) * Number(ci.quantity),
+                }));
+
+                if (itemsForDb.length > 0) {
+                  // Insert into Supabase if configured
+                  if (isSupabaseConfigured && supabase && supabase.from) {
+                    const { error: itemsError } = await supabase.from('order_items').insert(itemsForDb);
+                    if (itemsError) {
+                      console.error('order_items insert error:', itemsError);
+                    }
+                  }
+
+                  // Always keep a demo copy for local mode
+                  const demoItemsRaw = localStorage.getItem('demo_order_items');
+                  const demoItems = demoItemsRaw ? JSON.parse(demoItemsRaw) : [];
+                  const itemsForDemo = itemsForDb.map((it) => ({ id: `item_${orderId}_${it.product_id}`, price: it.unit_price, ...it }));
+                  localStorage.setItem('demo_order_items', JSON.stringify([...demoItems, ...itemsForDemo]));
+                }
+
+                clearCart();
+                showNotification('Payment successful! Order placed.');
+                navigate(`/order-confirmation/${orderId}`);
+              } catch (err) {
+                console.error('Error saving order:', err);
+                showNotification('Payment captured but failed to save order. Please contact support.', 'error');
+              }
             },
             // Failure callback
             (error) => {
@@ -121,10 +192,12 @@ const Checkout = () => {
     }
   };
 
-  if (cartItems.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      navigate('/cart');
+    }
+  }, [cartItems.length, navigate]);
+  if (cartItems.length === 0) return null;
 
   const steps = [
     { number: 1, name: 'Shipping' },

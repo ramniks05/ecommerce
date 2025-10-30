@@ -34,7 +34,9 @@ export const initializeRazorpay = async (orderData, onSuccess, onFailure) => {
 
   const amountPaise = Math.max(100, Math.round((orderData.total || 0) * 100));
 
-  const useMockMode = (import.meta.env.VITE_RAZORPAY_MODE || '').toLowerCase() === 'mock';
+  const useMockEnv = (import.meta.env.VITE_RAZORPAY_MODE || '').toLowerCase() === 'mock';
+  const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const useMockMode = useMockEnv || isLocalHost;
 
   const optionsBase = {
     key: keyId, // Your Razorpay Key ID

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiEdit2 } from 'react-icons/fi';
+import authService from '../services/authService';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,16 +19,34 @@ const Profile = () => {
     phone: user?.phone || '',
   });
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+  if (!user) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateProfile(formData);
-    setIsEditing(false);
-    showNotification('Profile updated successfully!');
+    try {
+      const updates = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+      };
+      try {
+        await authService.updateProfile(user.id, updates);
+      } catch (_) {}
+      updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+      });
+      setIsEditing(false);
+      showNotification('Profile updated successfully!');
+    } catch (err) {
+      showNotification('Failed to update profile. Please try again.', 'error');
+    }
   };
 
   const handleChange = (e) => {

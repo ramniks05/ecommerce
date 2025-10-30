@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { users } from '../data/mockData';
 import authService from '../services/authService';
 
 const AuthContext = createContext();
@@ -96,58 +95,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = (email, password) => {
-    // Handle mobile login (phone number as email)
-    if (email.includes('@mobile.catalix.com')) {
-      const mockUser = {
-        id: 'mobile-user-' + Date.now(),
-        email: email,
-        firstName: 'Mobile',
-        lastName: 'User',
-        phone: email.replace('@mobile.catalix.com', ''),
-        phoneVerified: true,
-        addresses: []
-      };
-      setUser(mockUser);
-      return { success: true };
-    }
-
-    // Handle Google login
-    if (email === 'user@gmail.com' && password === 'google-login') {
-      const mockUser = {
-        id: 'google-user-' + Date.now(),
-        email: 'user@gmail.com',
-        firstName: 'Google',
-        lastName: 'User',
-        phone: '',
-        phoneVerified: false,
-        addresses: []
-      };
-      setUser(mockUser);
-      return { success: true };
-    }
-
-    // Handle regular email/password login
-    const foundUser = users.find(
-      u => u.email === email && u.password === password
-    );
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      return { success: true };
-    }
-    return { success: false, error: 'Invalid email or password' };
-  };
+  const login = () => ({ success: false, error: 'Use Supabase login' });
 
   const register = (userData) => {
-    // Mock registration - in real app, this would call an API
-    const newUser = {
-      id: users.length + 1,
-      ...userData,
-      addresses: []
-    };
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
+    setUser(userData);
     return { success: true };
   };
 

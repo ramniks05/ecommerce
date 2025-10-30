@@ -24,7 +24,7 @@ const AuthCallback = () => {
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select('*')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)
             .single();
 
           if (profileError && profileError.code === 'PGRST116') {
@@ -33,8 +33,7 @@ const AuthCallback = () => {
               .from('user_profiles')
               .insert([
                 {
-                  user_id: session.user.id,
-                  email: session.user.email,
+                  id: session.user.id,
                   first_name: session.user.user_metadata?.full_name?.split(' ')[0] || 'User',
                   last_name: session.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
                   avatar_url: session.user.user_metadata?.avatar_url,

@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { otpFlow, phoneValidation } from '../services/otpService';
 import authService from '../services/authService';
 import Breadcrumb from '../components/Breadcrumb';
-import PhoneVerification from '../components/PhoneVerification';
 import { FiPhone, FiMail, FiUser, FiLock, FiCheck, FiX } from 'react-icons/fi';
 
 const Register = () => {
@@ -13,7 +11,7 @@ const Register = () => {
   const { register } = useAuth();
   const { showNotification } = useNotification();
 
-  const [step, setStep] = useState(1); // 1: Form, 2: Phone Verification, 3: Success
+  const [step, setStep] = useState(1); // 1: Form, 3: Success
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -43,9 +41,9 @@ const Register = () => {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Phone validation (optional for now - SMS not configured)
-    if (formData.phone.trim() && !phoneValidation.isValidIndianPhone(formData.phone)) {
-      newErrors.phone = 'Please enter a valid Indian mobile number';
+    // Phone validation (optional; basic check only)
+    if (formData.phone.trim() && !/^\+?\d{10,12}$/.test(formData.phone.replace(/\s|-/g, ''))) {
+      newErrors.phone = 'Please enter a valid mobile number';
     }
 
     // Password validation
@@ -73,32 +71,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Check if phone number is provided
-      if (formData.phone && formData.phone.trim()) {
-        // Format phone number
-        const formattedPhone = phoneValidation.formatIndianPhone(formData.phone);
-        console.log('Formatted phone:', formattedPhone);
-
-        // Send OTP for phone verification
-        const otpResult = await otpFlow.sendPhoneOTP(formattedPhone);
-        console.log('OTP result:', otpResult);
-        
-        if (otpResult.success) {
-          setFormData(prev => ({ ...prev, phone: formattedPhone }));
-          setStep(2);
-          showNotification('OTP sent to your mobile number', 'success');
-        } else {
-          setErrors({ phone: otpResult.error });
-        }
-      } else {
-        // Skip phone verification if no phone provided
-        console.log('No phone number provided, skipping verification');
-        await handlePhoneVerified(null);
-      }
+      // Skip OTP: create account directly
+      const phone = formData.phone?.trim() || null;
+      await handlePhoneVerified(phone);
     } catch (error) {
       console.error('Registration error:', error);
-      console.error('Error details:', error.message, error.stack);
-      setErrors({ phone: 'Failed to send OTP. Please try again.' });
+      setErrors({ phone: 'Registration failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -232,19 +210,7 @@ const Register = () => {
     }
   };
 
-  if (step === 2) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={[{ label: 'Register' }, { label: 'Verify Phone' }]} />
-        <PhoneVerification
-          phone={formData.phone}
-          onVerified={handlePhoneVerified}
-          onBack={handleBack}
-          onCancel={handleCancel}
-        />
-      </div>
-    );
-  }
+  // step 2 (phone verification) removed
 
   if (step === 3) {
     return (

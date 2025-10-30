@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiEdit, FiTrash2, FiEye, FiEyeOff, FiMail, FiPhone, FiMapPin, FiCalendar, FiUser, FiShield } from 'react-icons/fi';
-import { authService, adminService } from '../../services/supabaseService';
+import { adminService } from '../../services/supabaseService';
+import { supabase } from '../../lib/supabase';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -30,59 +31,13 @@ const UserManagement = () => {
       if (adminError) throw adminError;
       setAdminUsers(adminData || []);
 
-      // For demo purposes, we'll create mock customer data
-      // In real app, you'd fetch from user_profiles table
-      const mockCustomers = [
-        {
-          id: '1',
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+91-9876543210',
-          is_active: true,
-          created_at: '2024-01-15T10:30:00Z',
-          addresses: [
-            {
-              type: 'home',
-              street: '123 Main Street',
-              city: 'Mumbai',
-              state: 'Maharashtra',
-              pincode: '400001',
-              country: 'India'
-            }
-          ]
-        },
-        {
-          id: '2',
-          first_name: 'Jane',
-          last_name: 'Smith',
-          email: 'jane.smith@example.com',
-          phone: '+91-9876543211',
-          is_active: true,
-          created_at: '2024-01-20T14:45:00Z',
-          addresses: [
-            {
-              type: 'home',
-              street: '456 Park Avenue',
-              city: 'Delhi',
-              state: 'Delhi',
-              pincode: '110001',
-              country: 'India'
-            }
-          ]
-        },
-        {
-          id: '3',
-          first_name: 'Raj',
-          last_name: 'Kumar',
-          email: 'raj.kumar@example.com',
-          phone: '+91-9876543212',
-          is_active: false,
-          created_at: '2024-02-01T09:15:00Z',
-          addresses: []
-        }
-      ];
-      setUsers(mockCustomers);
+      // Load customers from user_profiles
+      const { data: customers, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (usersError) throw usersError;
+      setUsers(Array.isArray(customers) ? customers : []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -91,16 +46,25 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
-    const email = user.email.toLowerCase();
-    const search = searchQuery.toLowerCase();
+    const fullName = (`${user.first_name || ''} ${user.last_name || ''}`).trim().toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    const search = (searchQuery || '').toLowerCase();
     return fullName.includes(search) || email.includes(search);
   });
+  const toggleUserActive = async (u) => {
+    const prev = users;
+    setUsers(users.map(x => x.id === u.id ? { ...x, is_active: !u.is_active } : x));
+    try {
+      await supabase.from('user_profiles').update({ is_active: !u.is_active }).eq('id', u.id);
+    } catch (e) {
+      setUsers(prev);
+    }
+  };
 
   const filteredAdmins = adminUsers.filter(admin => {
-    const name = admin.name.toLowerCase();
-    const email = admin.email.toLowerCase();
-    const search = searchQuery.toLowerCase();
+    const name = (admin.name || '').toLowerCase();
+    const email = (admin.email || '').toLowerCase();
+    const search = (searchQuery || '').toLowerCase();
     return name.includes(search) || email.includes(search);
   });
 
@@ -297,7 +261,7 @@ const UserManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 flex items-center gap-2">
                         <FiMail size={14} className="text-gray-400" />
-                        {user.email}
+                        {user.email || '(no email)'}
                       </div>
                       {user.phone && (
                         <div className="text-sm text-gray-500 flex items-center gap-2">
@@ -341,8 +305,8 @@ const UserManagement = () => {
                         <button className="text-primary-600 hover:text-primary-900">
                           <FiEye size={16} />
                         </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <FiEdit size={16} />
+                        <button onClick={() => toggleUserActive(user)} className="text-gray-600 hover:text-gray-900">
+                          {user.is_active ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                         </button>
                       </div>
                     </td>

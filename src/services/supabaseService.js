@@ -818,6 +818,17 @@ export const wishlistService = {
 export const orderService = {
   // Get user orders
   async getUserOrders(userId) {
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const itemsRaw = localStorage.getItem('demo_order_items');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      const userOrders = orders.filter(o => o.user_id === userId).map(o => ({
+        ...o,
+        order_items: items.filter(i => i.order_id === o.id)
+      }));
+      return { data: userOrders, error: null };
+    }
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -834,16 +845,20 @@ export const orderService = {
 
   // Get all orders (admin)
   async getAllOrders(filters = {}) {
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const itemsRaw = localStorage.getItem('demo_order_items');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      let list = orders.map(o => ({ ...o, order_items: items.filter(i => i.order_id === o.id) }));
+      if (filters.status) list = list.filter(o => o.status === filters.status);
+      if (filters.payment_status) list = list.filter(o => o.payment_status === filters.payment_status);
+      return { data: list, error: null, count: list.length };
+    }
+    // Keep it simple to avoid 400s from schema differences: fetch orders only
     let query = supabase
       .from('orders')
-      .select(`
-        *,
-        order_items(
-          *,
-          products(name, images)
-        ),
-        user_profiles(first_name, last_name, email)
-      `);
+      .select('*');
 
     if (filters.status) {
       query = query.eq('status', filters.status);
@@ -860,23 +875,41 @@ export const orderService = {
 
   // Get order by ID
   async getOrderById(orderId) {
-    const { data, error } = await supabase
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const itemsRaw = localStorage.getItem('demo_order_items');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      const order = orders.find(o => String(o.id) === String(orderId)) || null;
+      if (!order) return { data: null, error: null };
+      return { data: { ...order, order_items: items.filter(i => String(i.order_id) === String(orderId)) }, error: null };
+    }
+    // Avoid 400s from missing FKs by using two-step fetch without embeddings
+    const { data: order, error: orderErr } = await supabase
       .from('orders')
-      .select(`
-        *,
-        order_items(
-          *,
-          products(name, images, slug)
-        ),
-        user_profiles(first_name, last_name, email, phone)
-      `)
+      .select('*')
       .eq('id', orderId)
       .single();
-    return { data, error };
+    if (orderErr) return { data: null, error: orderErr };
+
+    const { data: items, error: itemsErr } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId);
+    if (itemsErr) return { data: { ...order, order_items: [] }, error: null };
+
+    return { data: { ...order, order_items: items || [] }, error: null };
   },
 
   // Create order
   async createOrder(orderData) {
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      orders.push({ ...orderData, created_at: new Date().toISOString() });
+      localStorage.setItem('demo_orders', JSON.stringify(orders));
+      return { data: orderData, error: null };
+    }
     const { data, error } = await supabase
       .from('orders')
       .insert(orderData)
@@ -887,6 +920,14 @@ export const orderService = {
 
   // Update order status
   async updateOrderStatus(orderId, status, additionalData = {}) {
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const updated = orders.map(o => o.id === orderId ? { ...o, status, ...additionalData } : o);
+      localStorage.setItem('demo_orders', JSON.stringify(updated));
+      const found = updated.find(o => o.id === orderId) || null;
+      return { data: found, error: null };
+    }
     const { data, error } = await supabase
       .from('orders')
       .update({ status, ...additionalData })
@@ -898,6 +939,14 @@ export const orderService = {
 
   // Update payment status
   async updatePaymentStatus(orderId, paymentStatus, paymentId = null) {
+    if (!isSupabaseConfigured) {
+      const ordersRaw = localStorage.getItem('demo_orders');
+      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const updated = orders.map(o => o.id === orderId ? { ...o, payment_status: paymentStatus, payment_id: paymentId } : o);
+      localStorage.setItem('demo_orders', JSON.stringify(updated));
+      const found = updated.find(o => o.id === orderId) || null;
+      return { data: found, error: null };
+    }
     const { data, error } = await supabase
       .from('orders')
       .update({ 
