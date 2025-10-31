@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { productService, brandService, categoryService, fileService } from '../services/supabaseService';
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
@@ -10,6 +10,7 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -39,9 +40,11 @@ const Products = () => {
     };
 
     const timeout = setTimeout(() => setLoading(false), 5000);
+    // Scroll to top on route navigation
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     loadData();
     return () => clearTimeout(timeout);
-  }, []);
+  }, [location.key]);
 
   const filteredProducts = useMemo(() => {
     let result = searchQuery 
