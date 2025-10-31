@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { verifyAdminCredentials } from '../utils/adminUsers';
+import { jsonStorage, safeStorage } from '../utils/safeStorage';
 
 const AdminInit = () => {
   const [showForm, setShowForm] = useState(false);
@@ -51,8 +52,8 @@ const AdminInit = () => {
   const quickLogin = (email, password) => {
     const result = verifyAdminCredentials(email, password);
     if (result.success) {
-      localStorage.setItem('adminUser', JSON.stringify(result.user));
-      localStorage.setItem('isAdmin', 'true');
+      jsonStorage.set('adminUser', result.user);
+      safeStorage.setItem('isAdmin', 'true');
       navigate('/admin');
     }
   };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { verifyAdminCredentials } from '../../utils/adminUsers';
+import { jsonStorage, safeStorage } from '../../utils/safeStorage';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import authService from '../../services/authService';
 
@@ -54,8 +55,8 @@ const AdminLogin = () => {
               role: adminRow.role || 'admin',
               permissions: adminRow.permissions || ['products', 'orders', 'brands'],
             };
-            localStorage.setItem('adminUser', JSON.stringify(adminUser));
-            localStorage.setItem('isAdmin', 'true');
+            jsonStorage.set('adminUser', adminUser);
+            safeStorage.setItem('isAdmin', 'true');
             navigate('/admin');
             return;
           }
@@ -68,8 +69,8 @@ const AdminLogin = () => {
 
       const result = verifyAdminCredentials(formData.email, formData.password);
       if (result.success) {
-        localStorage.setItem('adminUser', JSON.stringify(result.user));
-        localStorage.setItem('isAdmin', 'true');
+        jsonStorage.set('adminUser', result.user);
+        safeStorage.setItem('isAdmin', 'true');
         navigate('/admin');
       } else {
         setError(result.error);

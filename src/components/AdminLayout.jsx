@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FiHome, FiLayers, FiLogOut, FiMenu, FiPackage, FiSettings, FiShoppingBag, FiTag, FiUsers, FiX } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { jsonStorage, safeStorage } from '../utils/safeStorage';
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
@@ -12,9 +13,9 @@ const AdminLayout = ({ children }) => {
 
   useEffect(() => {
     // Check for admin session
-    const storedAdmin = localStorage.getItem('adminUser');
+    const storedAdmin = jsonStorage.get('adminUser', null);
     if (storedAdmin) {
-      setAdminUser(JSON.parse(storedAdmin));
+      setAdminUser(storedAdmin);
     }
   }, []);
 
@@ -48,8 +49,8 @@ const AdminLayout = ({ children }) => {
 
   const handleLogout = async () => {
     // Clear admin session
-    localStorage.removeItem('adminUser');
-    localStorage.removeItem('isAdmin');
+    safeStorage.removeItem('adminUser');
+    safeStorage.removeItem('isAdmin');
     setAdminUser(null);
     
     // Also logout regular user if logged in

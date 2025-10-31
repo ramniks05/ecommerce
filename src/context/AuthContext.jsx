@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { jsonStorage, safeStorage } from '../utils/safeStorage';
 import authService from '../services/authService';
 
 const AuthContext = createContext();
@@ -12,10 +13,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(() => jsonStorage.get('user', null));
   const [loading, setLoading] = useState(false); // Start as false for immediate render
 
   // Check for Supabase session AFTER initial render
@@ -89,9 +87,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      jsonStorage.set('user', user);
     } else {
-      localStorage.removeItem('user');
+      safeStorage.removeItem('user');
     }
   }, [user]);
 

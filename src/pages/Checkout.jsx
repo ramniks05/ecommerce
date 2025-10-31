@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { initializeRazorpay, createRazorpayOrder } from '../utils/razorpay';
 import { orderService } from '../services/supabaseService';
+import { jsonStorage } from '../utils/safeStorage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
 import { FiCheck } from 'react-icons/fi';
@@ -154,10 +155,9 @@ const Checkout = () => {
                   }
 
                   // Always keep a demo copy for local mode
-                  const demoItemsRaw = localStorage.getItem('demo_order_items');
-                  const demoItems = demoItemsRaw ? JSON.parse(demoItemsRaw) : [];
+                  const demoItems = jsonStorage.get('demo_order_items', []);
                   const itemsForDemo = itemsForDb.map((it) => ({ id: `item_${orderId}_${it.product_id}`, price: it.unit_price, ...it }));
-                  localStorage.setItem('demo_order_items', JSON.stringify([...demoItems, ...itemsForDemo]));
+                  jsonStorage.set('demo_order_items', [...demoItems, ...itemsForDemo]);
                 }
 
                 clearCart();

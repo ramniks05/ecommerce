@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { jsonStorage } from '../utils/safeStorage';
 
 const WishlistContext = createContext();
 
@@ -11,13 +12,10 @@ export const useWishlist = () => {
 };
 
 export const WishlistProvider = ({ children }) => {
-  const [wishlistItems, setWishlistItems] = useState(() => {
-    const saved = localStorage.getItem('wishlist');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [wishlistItems, setWishlistItems] = useState(() => jsonStorage.get('wishlist', []));
 
   useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
+    jsonStorage.set('wishlist', wishlistItems);
   }, [wishlistItems]);
 
   const addToWishlist = (product) => {

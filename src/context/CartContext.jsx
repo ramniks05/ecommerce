@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { jsonStorage } from '../utils/safeStorage';
 
 const CartContext = createContext();
 
@@ -11,13 +12,10 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [cartItems, setCartItems] = useState(() => jsonStorage.get('cart', []));
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
+    jsonStorage.set('cart', cartItems);
   }, [cartItems]);
 
   const addToCart = (product, quantity = 1) => {

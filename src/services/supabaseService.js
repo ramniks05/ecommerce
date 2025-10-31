@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { jsonStorage } from '../utils/safeStorage';
 
 // =============================================
 // AUTHENTICATION SERVICES
@@ -225,8 +226,7 @@ export const categoryService = {
   // Get all categories
   async getCategories() {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       return { data: list, error: null };
     }
     const { data, error } = await supabase
@@ -239,8 +239,7 @@ export const categoryService = {
   // Get categories with hierarchy (parent-child relationships)
   async getCategoriesWithHierarchy() {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       return { data: this.buildCategoryHierarchy(list), error: null };
     }
     const { data, error } = await supabase
@@ -281,8 +280,7 @@ export const categoryService = {
   // Get only parent categories (for subcategory selection)
   async getParentCategories() {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       const parentCategories = list.filter(cat => !cat.parent_id);
       return { data: parentCategories, error: null };
     }
@@ -297,8 +295,7 @@ export const categoryService = {
   // Get subcategories by parent ID
   async getSubcategories(parentId) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       const subcategories = list.filter(cat => cat.parent_id === parentId);
       return { data: subcategories, error: null };
     }
@@ -333,12 +330,11 @@ export const categoryService = {
   // Create category
   async createCategory(categoryData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       const now = new Date().toISOString();
       const newItem = { id: `demo-category-${Date.now()}`, created_at: now, updated_at: now, ...categoryData };
       const updated = [newItem, ...list];
-      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      jsonStorage.set('demo_categories', updated);
       return { data: newItem, error: null };
     }
     const { data, error } = await supabase
@@ -352,11 +348,10 @@ export const categoryService = {
   // Update category
   async updateCategory(id, categoryData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       const updated = list.map(c => (c.id === id ? { ...c, ...categoryData, updated_at: new Date().toISOString() } : c));
       const data = updated.find(c => c.id === id) || null;
-      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      jsonStorage.set('demo_categories', updated);
       return { data, error: null };
     }
     const { data, error } = await supabase
@@ -371,10 +366,9 @@ export const categoryService = {
   // Delete category
   async deleteCategory(id) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_categories');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_categories', []);
       const updated = list.filter(c => c.id !== id);
-      localStorage.setItem('demo_categories', JSON.stringify(updated));
+      jsonStorage.set('demo_categories', updated);
       return { error: null };
     }
     const { error } = await supabase
@@ -393,8 +387,7 @@ export const brandService = {
   // Get all brands
   async getBrands() {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_brands');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_brands', []);
       return { data: list, error: null };
     }
     const { data, error } = await supabase
@@ -448,12 +441,11 @@ export const brandService = {
   // Create brand
   async createBrand(brandData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_brands');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_brands', []);
       const now = new Date().toISOString();
       const newItem = { id: `demo-brand-${Date.now()}`, created_at: now, updated_at: now, ...brandData };
       const updated = [newItem, ...list];
-      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      jsonStorage.set('demo_brands', updated);
       return { data: newItem, error: null };
     }
     const { data, error } = await supabase
@@ -467,11 +459,10 @@ export const brandService = {
   // Update brand
   async updateBrand(id, brandData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_brands');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_brands', []);
       const updated = list.map(b => (b.id === id ? { ...b, ...brandData, updated_at: new Date().toISOString() } : b));
       const data = updated.find(b => b.id === id) || null;
-      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      jsonStorage.set('demo_brands', updated);
       return { data, error: null };
     }
     const { data, error } = await supabase
@@ -486,10 +477,9 @@ export const brandService = {
   // Delete brand
   async deleteBrand(id) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_brands');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_brands', []);
       const updated = list.filter(b => b.id !== id);
-      localStorage.setItem('demo_brands', JSON.stringify(updated));
+      jsonStorage.set('demo_brands', updated);
       return { error: null };
     }
     const { error } = await supabase
@@ -508,8 +498,7 @@ export const productService = {
   // Get all products with filters
   async getProducts(filters = {}) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_products');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_products', []);
       return { data: list, error: null, count: list.length };
     }
     let query = supabase
@@ -633,12 +622,11 @@ export const productService = {
   // Create product
   async createProduct(productData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_products');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_products', []);
       const now = new Date().toISOString();
       const newItem = { id: `demo-product-${Date.now()}`, created_at: now, updated_at: now, ...productData };
       const updated = [newItem, ...list];
-      localStorage.setItem('demo_products', JSON.stringify(updated));
+      jsonStorage.set('demo_products', updated);
       return { data: newItem, error: null };
     }
     const { data, error } = await supabase
@@ -652,11 +640,10 @@ export const productService = {
   // Update product
   async updateProduct(id, productData) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_products');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_products', []);
       const updated = list.map(p => (p.id === id ? { ...p, ...productData, updated_at: new Date().toISOString() } : p));
       const data = updated.find(p => p.id === id) || null;
-      localStorage.setItem('demo_products', JSON.stringify(updated));
+      jsonStorage.set('demo_products', updated);
       return { data, error: null };
     }
     const { data, error } = await supabase
@@ -671,10 +658,9 @@ export const productService = {
   // Delete product
   async deleteProduct(id) {
     if (!isSupabaseConfigured) {
-      const raw = localStorage.getItem('demo_products');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = jsonStorage.get('demo_products', []);
       const updated = list.filter(p => p.id !== id);
-      localStorage.setItem('demo_products', JSON.stringify(updated));
+      jsonStorage.set('demo_products', updated);
       return { error: null };
     }
     const { error } = await supabase
@@ -819,10 +805,8 @@ export const orderService = {
   // Get user orders
   async getUserOrders(userId) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const itemsRaw = localStorage.getItem('demo_order_items');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
-      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
+      const items = jsonStorage.get('demo_order_items', []);
       const userOrders = orders.filter(o => o.user_id === userId).map(o => ({
         ...o,
         order_items: items.filter(i => i.order_id === o.id)
@@ -846,10 +830,8 @@ export const orderService = {
   // Get all orders (admin)
   async getAllOrders(filters = {}) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const itemsRaw = localStorage.getItem('demo_order_items');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
-      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
+      const items = jsonStorage.get('demo_order_items', []);
       let list = orders.map(o => ({ ...o, order_items: items.filter(i => i.order_id === o.id) }));
       if (filters.status) list = list.filter(o => o.status === filters.status);
       if (filters.payment_status) list = list.filter(o => o.payment_status === filters.payment_status);
@@ -876,10 +858,8 @@ export const orderService = {
   // Get order by ID
   async getOrderById(orderId) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const itemsRaw = localStorage.getItem('demo_order_items');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
-      const items = itemsRaw ? JSON.parse(itemsRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
+      const items = jsonStorage.get('demo_order_items', []);
       const order = orders.find(o => String(o.id) === String(orderId)) || null;
       if (!order) return { data: null, error: null };
       return { data: { ...order, order_items: items.filter(i => String(i.order_id) === String(orderId)) }, error: null };
@@ -904,10 +884,9 @@ export const orderService = {
   // Create order
   async createOrder(orderData) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
       orders.push({ ...orderData, created_at: new Date().toISOString() });
-      localStorage.setItem('demo_orders', JSON.stringify(orders));
+      jsonStorage.set('demo_orders', orders);
       return { data: orderData, error: null };
     }
     const { data, error } = await supabase
@@ -921,10 +900,9 @@ export const orderService = {
   // Update order status
   async updateOrderStatus(orderId, status, additionalData = {}) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
       const updated = orders.map(o => o.id === orderId ? { ...o, status, ...additionalData } : o);
-      localStorage.setItem('demo_orders', JSON.stringify(updated));
+      jsonStorage.set('demo_orders', updated);
       const found = updated.find(o => o.id === orderId) || null;
       return { data: found, error: null };
     }
@@ -940,10 +918,9 @@ export const orderService = {
   // Update payment status
   async updatePaymentStatus(orderId, paymentStatus, paymentId = null) {
     if (!isSupabaseConfigured) {
-      const ordersRaw = localStorage.getItem('demo_orders');
-      const orders = ordersRaw ? JSON.parse(ordersRaw) : [];
+      const orders = jsonStorage.get('demo_orders', []);
       const updated = orders.map(o => o.id === orderId ? { ...o, payment_status: paymentStatus, payment_id: paymentId } : o);
-      localStorage.setItem('demo_orders', JSON.stringify(updated));
+      jsonStorage.set('demo_orders', updated);
       const found = updated.find(o => o.id === orderId) || null;
       return { data: found, error: null };
     }
@@ -1146,8 +1123,7 @@ export const attributeService = {
   // Get all attributes
   async getAttributes() {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attributes');
-      return { data: stored ? JSON.parse(stored) : [], error: null };
+      return { data: jsonStorage.get('attributes', []), error: null };
     }
     
     const { data, error } = await supabase
@@ -1161,8 +1137,7 @@ export const attributeService = {
   // Get attribute by ID
   async getAttribute(id) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attributes');
-      const attributes = stored ? JSON.parse(stored) : [];
+      const attributes = jsonStorage.get('attributes', []);
       const attribute = attributes.find(a => a.id === id);
       return { data: attribute || null, error: attribute ? null : new Error('Attribute not found') };
     }
@@ -1179,8 +1154,7 @@ export const attributeService = {
   // Create attribute
   async createAttribute(attributeData) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attributes');
-      const attributes = stored ? JSON.parse(stored) : [];
+      const attributes = jsonStorage.get('attributes', []);
       const newAttribute = {
         id: Date.now().toString(),
         ...attributeData,
@@ -1188,7 +1162,7 @@ export const attributeService = {
         updated_at: new Date().toISOString()
       };
       attributes.push(newAttribute);
-      localStorage.setItem('attributes', JSON.stringify(attributes));
+      jsonStorage.set('attributes', attributes);
       return { data: newAttribute, error: null };
     }
     
@@ -1204,14 +1178,13 @@ export const attributeService = {
   // Update attribute
   async updateAttribute(id, attributeData) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attributes');
-      const attributes = stored ? JSON.parse(stored) : [];
+      const attributes = jsonStorage.get('attributes', []);
       const index = attributes.findIndex(a => a.id === id);
       if (index === -1) {
         return { data: null, error: new Error('Attribute not found') };
       }
       attributes[index] = { ...attributes[index], ...attributeData, updated_at: new Date().toISOString() };
-      localStorage.setItem('attributes', JSON.stringify(attributes));
+      jsonStorage.set('attributes', attributes);
       return { data: attributes[index], error: null };
     }
     
@@ -1228,10 +1201,9 @@ export const attributeService = {
   // Delete attribute
   async deleteAttribute(id) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attributes');
-      const attributes = stored ? JSON.parse(stored) : [];
+      const attributes = jsonStorage.get('attributes', []);
       const filtered = attributes.filter(a => a.id !== id);
-      localStorage.setItem('attributes', JSON.stringify(filtered));
+      jsonStorage.set('attributes', filtered);
       return { data: null, error: null };
     }
     
@@ -1246,8 +1218,7 @@ export const attributeService = {
   // Get attribute values
   async getAttributeValues(attributeId) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attribute_values');
-      const values = stored ? JSON.parse(stored) : [];
+      const values = jsonStorage.get('attribute_values', []);
       const attributeValues = values.filter(v => v.attribute_id === attributeId);
       return { data: attributeValues, error: null };
     }
@@ -1264,8 +1235,7 @@ export const attributeService = {
   // Create attribute value
   async createAttributeValue(valueData) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attribute_values');
-      const values = stored ? JSON.parse(stored) : [];
+      const values = jsonStorage.get('attribute_values', []);
       const newValue = {
         id: Date.now().toString(),
         ...valueData,
@@ -1273,7 +1243,7 @@ export const attributeService = {
         updated_at: new Date().toISOString()
       };
       values.push(newValue);
-      localStorage.setItem('attribute_values', JSON.stringify(values));
+      jsonStorage.set('attribute_values', values);
       return { data: newValue, error: null };
     }
     
@@ -1289,14 +1259,13 @@ export const attributeService = {
   // Update attribute value
   async updateAttributeValue(id, valueData) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attribute_values');
-      const values = stored ? JSON.parse(stored) : [];
+      const values = jsonStorage.get('attribute_values', []);
       const index = values.findIndex(v => v.id === id);
       if (index === -1) {
         return { data: null, error: new Error('Attribute value not found') };
       }
       values[index] = { ...values[index], ...valueData, updated_at: new Date().toISOString() };
-      localStorage.setItem('attribute_values', JSON.stringify(values));
+      jsonStorage.set('attribute_values', values);
       return { data: values[index], error: null };
     }
     
@@ -1313,10 +1282,9 @@ export const attributeService = {
   // Delete attribute value
   async deleteAttributeValue(id) {
     if (!isSupabaseConfigured) {
-      const stored = localStorage.getItem('attribute_values');
-      const values = stored ? JSON.parse(stored) : [];
+      const values = jsonStorage.get('attribute_values', []);
       const filtered = values.filter(v => v.id !== id);
-      localStorage.setItem('attribute_values', JSON.stringify(filtered));
+      jsonStorage.set('attribute_values', filtered);
       return { data: null, error: null };
     }
     
