@@ -16,9 +16,21 @@ const Login = () => {
   const handleEmailLogin = async (email, password) => {
     try {
       console.log('Attempting email login with Supabase...');
-      
+      // Hard timeout to avoid infinite waiting on slow/blocked networks
+      const withTimeout = (p, ms = 8000) =>
+        Promise.race([
+          p,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+        ]);
+
       // Try Supabase authentication first
-      const { data, error } = await authService.signIn(email, password);
+      let data, error;
+      try {
+        const res = await withTimeout(authService.signIn(email, password));
+        data = res.data; error = res.error;
+      } catch (e) {
+        error = e;
+      }
       
       if (error) {
         console.log('Supabase login failed, trying mock login...', error);

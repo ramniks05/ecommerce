@@ -22,7 +22,18 @@ const AdminLogin = () => {
     try {
       // Try Supabase Auth + admin_users role/permissions when configured
       if (isSupabaseConfigured) {
-        const { data, error: authError } = await authService.signIn(formData.email, formData.password);
+        // Timeout guard in case auth stalls on some networks/browsers
+        const withTimeout = (p, ms = 8000) => Promise.race([
+          p,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+        ]);
+        let data, authError;
+        try {
+          const res = await withTimeout(authService.signIn(formData.email, formData.password));
+          data = res.data; authError = res.error;
+        } catch (e) {
+          authError = e;
+        }
         if (!authError && data && data.user) {
           // Authenticated: verify admin role
           const { data: adminRow, error: dbError } = await supabase
