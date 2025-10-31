@@ -109,10 +109,17 @@ export const authService = {
   // Sign in with Google OAuth
   async signInWithGoogle() {
     try {
+      const siteUrl = (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? window.location.origin
+        : '';
+      const envSiteUrl = (typeof import.meta !== 'undefined' && import.meta.env)
+        ? (import.meta.env.VITE_SITE_URL || import.meta.env.VITE_PUBLIC_SITE_URL || '')
+        : '';
+      const redirectBase = envSiteUrl || siteUrl;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${redirectBase}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
