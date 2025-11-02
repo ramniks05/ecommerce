@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMail, FiPhone, FiEye, FiEyeOff, FiArrowLeft, FiCheck, FiX } from 'react-icons/fi';
 import { otpFlow, phoneValidation } from '../services/otpService';
 
@@ -12,9 +12,10 @@ const LoginOptions = ({ onEmailLogin, onMobileLogin, onGoogleLogin, onBack }) =>
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300);
+  const [errors, setErrors] = useState({});
 
   // Timer for OTP
-  useState(() => {
+  useEffect(() => {
     if (otpSent && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => prev - 1);
@@ -29,10 +30,33 @@ const LoginOptions = ({ onEmailLogin, onMobileLogin, onGoogleLogin, onBack }) =>
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const validateEmailForm = () => {
+    const newErrors = {};
+    
+    if (!emailForm.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!emailForm.password) {
+      newErrors.password = 'Password is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleEmailLogin = async (e) => {
     e.preventDefault();
+    
+    if (!validateEmailForm()) {
+      return;
+    }
+    
     setLoading(true);
     setError('');
+    setErrors({});
 
     try {
       const result = await onEmailLogin(emailForm.email, emailForm.password);
@@ -215,12 +239,29 @@ const LoginOptions = ({ onEmailLogin, onMobileLogin, onGoogleLogin, onBack }) =>
                 <input
                   type="email"
                   value={emailForm.email}
-                  onChange={(e) => setEmailForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  onChange={(e) => {
+                    setEmailForm(prev => ({ ...prev, email: e.target.value }));
+                    if (errors.email) {
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.email;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter your email"
                   required
                 />
               </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <FiX size={12} />
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -232,8 +273,19 @@ const LoginOptions = ({ onEmailLogin, onMobileLogin, onGoogleLogin, onBack }) =>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={emailForm.password}
-                  onChange={(e) => setEmailForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  onChange={(e) => {
+                    setEmailForm(prev => ({ ...prev, password: e.target.value }));
+                    if (errors.password) {
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.password;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  className={`w-full pl-10 pr-12 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    errors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter your password"
                   required
                 />
@@ -245,6 +297,12 @@ const LoginOptions = ({ onEmailLogin, onMobileLogin, onGoogleLogin, onBack }) =>
                   {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <FiX size={12} />
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             <button

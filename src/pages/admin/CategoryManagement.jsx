@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiEdit, FiEye, FiEyeOff, FiImage, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiEdit, FiEye, FiEyeOff, FiImage, FiPlus, FiTrash2, FiX, FiAlertCircle } from 'react-icons/fi';
 import ImageUploader from '../../components/ImageUploader';
 import Modal from '../../components/Modal';
 import { categoryService, fileService } from '../../services/supabaseService';
@@ -25,6 +25,7 @@ const CategoryManagement = () => {
     sort_order: 0
   });
   const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setLoading(false), 4000);
@@ -50,9 +51,32 @@ const CategoryManagement = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Category name is required';
+    }
+    
+    if (!formData.slug.trim()) {
+      newErrors.slug = 'Slug is required';
+    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setUploading(true);
+    setErrors({});
 
     try {
       const payload = {
@@ -408,9 +432,26 @@ const CategoryManagement = () => {
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        handleNameChange(e.target.value);
+                        if (errors.name) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.name;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.name ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.name && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -421,9 +462,29 @@ const CategoryManagement = () => {
                       type="text"
                       required
                       value={formData.slug}
-                      onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, slug: e.target.value }));
+                        if (errors.slug) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.slug;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.slug ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.slug && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.slug}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      URL-friendly identifier (lowercase, numbers, hyphens only)
+                    </p>
                   </div>
                 </div>
 

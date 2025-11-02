@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import Breadcrumb from '../components/Breadcrumb';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiEdit2 } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiEdit2, FiX } from 'react-icons/fi';
 import authService from '../services/authService';
 
 const Profile = () => {
@@ -18,6 +18,7 @@ const Profile = () => {
     email: user?.email || '',
     phone: user?.phone || '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!user) {
@@ -26,8 +27,38 @@ const Profile = () => {
   }, [user, navigate]);
   if (!user) return null;
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (formData.phone && !/^\+?\d{10,12}$/.test(formData.phone.replace(/\s|-/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     try {
       const updates = {
         first_name: formData.firstName,
@@ -43,6 +74,7 @@ const Profile = () => {
         phone: formData.phone,
       });
       setIsEditing(false);
+      setErrors({});
       showNotification('Profile updated successfully!');
     } catch (err) {
       showNotification('Failed to update profile. Please try again.', 'error');
@@ -50,10 +82,19 @@ const Profile = () => {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -129,44 +170,62 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      First Name
+                      First Name *
                     </label>
                     <input
                       type="text"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      className="input-field"
+                      className={`input-field ${errors.firstName ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.firstName && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.firstName}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Last Name
+                      Last Name *
                     </label>
                     <input
                       type="text"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      className="input-field"
+                      className={`input-field ${errors.lastName ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.lastName && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.lastName}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address
+                    Email Address *
                   </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="input-field"
+                    className={`input-field ${errors.email ? 'border-red-500' : ''}`}
                     required
                   />
+                  {errors.email && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FiX size={12} />
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -178,9 +237,14 @@ const Profile = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="input-field"
-                    required
+                    className={`input-field ${errors.phone ? 'border-red-500' : ''}`}
                   />
+                  {errors.phone && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FiX size={12} />
+                      {errors.phone}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-4">
