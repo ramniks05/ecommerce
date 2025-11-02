@@ -4,7 +4,8 @@ import { productService, brandService, categoryService, fileService } from '../s
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
 import Breadcrumb from '../components/Breadcrumb';
-import { FiGrid, FiList, FiSliders } from 'react-icons/fi';
+import { FiGrid, FiList, FiSliders, FiRefreshCw } from 'react-icons/fi';
+import { clearAppCache } from '../utils/clearCache';
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -21,29 +22,142 @@ const Products = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const loadData = async () => {
+      setLoading(true);
+      
+      // Add cache-busting timestamp to prevent stale cached responses
+      const cacheBuster = Date.now();
+      console.log(`🔄 [Products] Starting load (timestamp: ${cacheBuster})`);
+      console.log(`🔄 [Products] isSupabaseConfigured: ${import.meta.env.VITE_SUPABASE_URL ? 'YES' : 'NO'}`);
+      
       try {
+        // Fetch only active products with better error handling
+        console.log(`🔄 [Products] Calling getActiveProducts...`);
         const [productsResult, brandsResult, categoriesResult] = await Promise.all([
-          productService.getProducts(),
-          brandService.getBrands(),
-          categoryService.getCategories()
+          productService.getActiveProducts().catch(err => {
+            console.error('❌ [Products] Error fetching active products:', err);
+            console.error('❌ [Products] Error details:', {
+              message: err?.message,
+              code: err?.code,
+              stack: err?.stack
+            });
+            // Fallback: try fetching all products if active filter fails
+            console.log('🔄 [Products] Trying fallback: getProducts()...');
+            return productService.getProducts().catch(fallbackErr => {
+              console.error('❌ [Products] Fallback fetch also failed:', fallbackErr);
+              return { data: null, error: fallbackErr };
+            });
+          }),
+          brandService.getBrands().catch(err => {
+            console.error('Error fetching brands:', err);
+            return { data: null, error: err };
+          }),
+          categoryService.getCategories().catch(err => {
+            console.error('Error fetching categories:', err);
+            return { data: null, error: err };
+          })
         ]);
 
-        if (productsResult.data) setProducts(productsResult.data);
-        if (brandsResult.data) setBrands(brandsResult.data);
-        if (categoriesResult.data) setCategories(categoriesResult.data);
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+
+        // Validate and set data - only set if we have valid array data
+        console.log(`📊 [Products] Results:`, {
+          productsHasError: !!productsResult?.error,
+          productsHasData: !!productsResult?.data,
+          productsDataLength: Array.isArray(productsResult?.data) ? productsResult.data.length : 'not array',
+          brandsHasError: !!brandsResult?.error,
+          categoriesHasError: !!categoriesResult?.error
+        });
+
+        if (productsResult?.error) {
+          console.error('❌ [Products] Products fetch error:', productsResult.error);
+          console.error('❌ [Products] Error details:', {
+            message: productsResult.error?.message,
+            code: productsResult.error?.code,
+            status: productsResult.error?.status,
+            details: productsResult.error?.details,
+            hint: productsResult.error?.hint
+          });
+          setProducts([]);
+        } else {
+          const productData = Array.isArray(productsResult?.data) ? productsResult.data : [];
+          console.log(`✅ [Products] Loaded ${productData.length} products from API`);
+          
+          if (productData.length > 0) {
+            console.log(`📦 [Products] First product sample:`, {
+              id: productData[0]?.id,
+              name: productData[0]?.name,
+              is_active: productData[0]?.is_active
+            });
+          }
+          
+          // Filter out inactive products client-side as additional safety
+          const activeProducts = productData.filter(p => p.is_active !== false);
+          console.log(`✅ [Products] ${activeProducts.length} active products after client-side filter`);
+          setProducts(activeProducts);
+          
+          if (activeProducts.length === 0 && productData.length > 0) {
+            console.warn('⚠️ [Products] All products are inactive!');
+          }
+        }
+
+        if (brandsResult?.error) {
+          console.error('Brands fetch error:', brandsResult.error);
+          setBrands([]);
+        } else {
+          setBrands(Array.isArray(brandsResult?.data) ? brandsResult.data : []);
+        }
+
+        if (categoriesResult?.error) {
+          console.error('Categories fetch error:', categoriesResult.error);
+          setCategories([]);
+        } else {
+          setCategories(Array.isArray(categoriesResult?.data) ? categoriesResult.data : []);
+        }
       } catch (error) {
-        console.error('Error loading products data:', error);
+        console.error('Error loading data:', error);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setProducts([]);
+          setBrands([]);
+          setCategories([]);
+        }
       } finally {
-        setLoading(false);
+        // Only update loading state if component is still mounted
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    const timeout = setTimeout(() => setLoading(false), 5000);
+    // Add timeout as safety net (only if data hasn't loaded)
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 10000); // Increased to 10 seconds
+
     // Scroll to top on route navigation
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    loadData();
-    return () => clearTimeout(timeout);
+    
+    // Load data
+    loadData().finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [location.key]);
 
   const filteredProducts = useMemo(() => {
@@ -107,8 +221,9 @@ const Products = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16">
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p className="text-gray-600">Loading products...</p>
         </div>
       </div>
     );
@@ -262,9 +377,37 @@ const Products = () => {
             <div className="text-center py-16">
               <div className="text-gray-400 text-6xl mb-4">🔍</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">No Products Found</h3>
-              <p className="text-gray-600 mb-6">
-                Try adjusting your filters or search terms
+              <p className="text-gray-600 mb-4">
+                {products.length === 0 && !loading 
+                  ? 'No products available. Please check the console for errors or ensure products exist in the database.'
+                  : 'Try adjusting your filters or search terms'}
               </p>
+              {products.length === 0 && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left max-w-md mx-auto">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    <strong>Debugging info:</strong>
+                  </p>
+                  <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1 mb-3">
+                    <li>Total products loaded: {products.length}</li>
+                    <li>Check browser console for error messages</li>
+                    <li>Verify products exist in Supabase database</li>
+                    <li>Check if products have is_active = true</li>
+                  </ul>
+                  <p className="text-xs text-yellow-800 mb-2">
+                    <strong>⚠️ Cache Issue?</strong> If this works in private window but not regular window, try:
+                  </p>
+                  <button
+                    onClick={() => {
+                      console.log('🧹 Clearing cache and reloading...');
+                      clearAppCache();
+                    }}
+                    className="w-full mt-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center justify-center gap-2 text-sm"
+                  >
+                    <FiRefreshCw size={16} />
+                    Clear Cache & Reload
+                  </button>
+                </div>
+              )}
               <button
                 onClick={() => setFilters({})}
                 className="btn-primary"

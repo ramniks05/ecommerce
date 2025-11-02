@@ -1,64 +1,4 @@
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { jsonStorage } from '../utils/safeStorage';
-
-// =============================================
-// AUTHENTICATION SERVICES
-// =============================================
-
-export const authService = {
-  // Sign up new user
-  async signUp(email, password, userData = {}) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
-      }
-    });
-    return { data, error };
-  },
-
-  // Sign in user
-  async signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    return { data, error };
-  },
-
-  // Sign out user
-  async signOut() {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-  },
-
-  // Get current user
-  async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    return { user, error };
-  },
-
-  // Update user profile
-  async updateProfile(userId, profileData) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .upsert({ id: userId, ...profileData })
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  // Get user profile
-  async getUserProfile(userId) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    return { data, error };
-  }
-};
+import { supabase } from '../lib/supabase';
 
 // =============================================
 // ADMIN SERVICES
@@ -225,29 +165,35 @@ export const bannerService = {
 export const categoryService = {
   // Get all categories
   async getCategories() {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      return { data: list, error: null };
-    }
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
-    return { data, error };
-  },
-
-  // Get categories with hierarchy (parent-child relationships)
-  async getCategoriesWithHierarchy() {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      return { data: this.buildCategoryHierarchy(list), error: null };
-    }
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .order('sort_order', { ascending: true });
     
-    if (error) return { data: null, error };
+    return { data, error };
+  },
+  
+  // Get category by slug
+  async getCategoryBySlug(slug) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    
+    return { data, error };
+  },
+
+  // Get categories with hierarchy (parent-child relationships)
+  async getCategoriesWithHierarchy() {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    
+    if (error) {
+      return { data: null, error };
+    }
     
     return { data: this.buildCategoryHierarchy(data), error: null };
   },
@@ -279,31 +225,23 @@ export const categoryService = {
 
   // Get only parent categories (for subcategory selection)
   async getParentCategories() {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      const parentCategories = list.filter(cat => !cat.parent_id);
-      return { data: parentCategories, error: null };
-    }
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .is('parent_id', null)
       .order('sort_order', { ascending: true });
+    
     return { data, error };
   },
 
   // Get subcategories by parent ID
   async getSubcategories(parentId) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      const subcategories = list.filter(cat => cat.parent_id === parentId);
-      return { data: subcategories, error: null };
-    }
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('parent_id', parentId)
       .order('sort_order', { ascending: true });
+    
     return { data, error };
   },
 
@@ -329,52 +267,34 @@ export const categoryService = {
 
   // Create category
   async createCategory(categoryData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      const now = new Date().toISOString();
-      const newItem = { id: `demo-category-${Date.now()}`, created_at: now, updated_at: now, ...categoryData };
-      const updated = [newItem, ...list];
-      jsonStorage.set('demo_categories', updated);
-      return { data: newItem, error: null };
-    }
     const { data, error } = await supabase
       .from('categories')
       .insert(categoryData)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Update category
   async updateCategory(id, categoryData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      const updated = list.map(c => (c.id === id ? { ...c, ...categoryData, updated_at: new Date().toISOString() } : c));
-      const data = updated.find(c => c.id === id) || null;
-      jsonStorage.set('demo_categories', updated);
-      return { data, error: null };
-    }
     const { data, error } = await supabase
       .from('categories')
       .update(categoryData)
       .eq('id', id)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Delete category
   async deleteCategory(id) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_categories', []);
-      const updated = list.filter(c => c.id !== id);
-      jsonStorage.set('demo_categories', updated);
-      return { error: null };
-    }
     const { error } = await supabase
       .from('categories')
       .delete()
       .eq('id', id);
+    
     return { error };
   }
 };
@@ -386,14 +306,11 @@ export const categoryService = {
 export const brandService = {
   // Get all brands
   async getBrands() {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_brands', []);
-      return { data: list, error: null };
-    }
     const { data, error } = await supabase
       .from('brands')
       .select('*')
       .order('sort_order', { ascending: true });
+    
     return { data, error };
   },
 
@@ -404,6 +321,7 @@ export const brandService = {
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
+    
     return { data, error };
   },
 
@@ -415,6 +333,7 @@ export const brandService = {
       .eq('is_active', true)
       .eq('is_featured', true)
       .order('sort_order', { ascending: true });
+    
     return { data, error };
   },
 
@@ -425,6 +344,7 @@ export const brandService = {
       .select('*')
       .eq('slug', slug)
       .single();
+    
     return { data, error };
   },
 
@@ -440,52 +360,34 @@ export const brandService = {
 
   // Create brand
   async createBrand(brandData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_brands', []);
-      const now = new Date().toISOString();
-      const newItem = { id: `demo-brand-${Date.now()}`, created_at: now, updated_at: now, ...brandData };
-      const updated = [newItem, ...list];
-      jsonStorage.set('demo_brands', updated);
-      return { data: newItem, error: null };
-    }
     const { data, error } = await supabase
       .from('brands')
       .insert(brandData)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Update brand
   async updateBrand(id, brandData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_brands', []);
-      const updated = list.map(b => (b.id === id ? { ...b, ...brandData, updated_at: new Date().toISOString() } : b));
-      const data = updated.find(b => b.id === id) || null;
-      jsonStorage.set('demo_brands', updated);
-      return { data, error: null };
-    }
     const { data, error } = await supabase
       .from('brands')
       .update(brandData)
       .eq('id', id)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Delete brand
   async deleteBrand(id) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_brands', []);
-      const updated = list.filter(b => b.id !== id);
-      jsonStorage.set('demo_brands', updated);
-      return { error: null };
-    }
     const { error } = await supabase
       .from('brands')
       .delete()
       .eq('id', id);
+    
     return { error };
   }
 };
@@ -497,10 +399,6 @@ export const brandService = {
 export const productService = {
   // Get all products with filters
   async getProducts(filters = {}) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_products', []);
-      return { data: list, error: null, count: list.length };
-    }
     let query = supabase
       .from('products')
       .select(`
@@ -510,6 +408,9 @@ export const productService = {
       `);
 
     // Apply filters
+    if (filters.is_active !== undefined) {
+      query = query.eq('is_active', filters.is_active);
+    }
     if (filters.brand_id) {
       query = query.eq('brand_id', filters.brand_id);
     }
@@ -547,28 +448,146 @@ export const productService = {
       query = query.range(from, to);
     }
 
-    const { data, error, count } = await query;
-    return { data, error, count };
+    try {
+      const { data, error, count } = await query;
+      
+      // Log errors for debugging
+      if (error) {
+        console.error('❌ Supabase query error in getProducts:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          filters: filters
+        });
+      }
+      
+      return { data, error, count };
+    } catch (err) {
+      console.error('❌ Exception in getProducts:', err);
+      return { data: null, error: err, count: null };
+    }
   },
 
   // Get active products only
   async getActiveProducts(filters = {}) {
-    return this.getProducts({ ...filters, is_active: true });
+    try {
+      const result = await this.getProducts({ ...filters, is_active: true });
+      // If active filter returns empty but we have an error, log it
+      if (result.error) {
+        console.warn('⚠️ getActiveProducts error, may try fallback:', result.error);
+      } else if (Array.isArray(result.data) && result.data.length === 0) {
+        console.warn('⚠️ getActiveProducts returned empty array - no active products found');
+      }
+      return result;
+    } catch (err) {
+      console.error('❌ Exception in getActiveProducts:', err);
+      return { data: null, error: err, count: null };
+    }
   },
 
   // Get product by slug
   async getProductBySlug(slug) {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        brands(name, slug, logo_url, description),
-        categories(name, slug),
-        product_variants(*)
-      `)
-      .eq('slug', slug)
-      .single();
-    return { data, error };
+    
+    try {
+      // First try with joins - if this fails due to RLS, try without joins
+      let { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          brands(name, slug, logo_url, description),
+          categories(name, slug),
+          product_variants(*)
+        `)
+        .eq('slug', slug)
+        .eq('is_active', true) // Explicitly check is_active
+        .single();
+      
+      // If query fails, try without joins (RLS might be blocking brands/categories)
+      if (error) {
+        const { data: productOnly, error: productError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', slug)
+          .eq('is_active', true)
+          .single();
+        
+        if (productError) {
+          // If still fails, try without is_active check (might be RLS blocking everything)
+          if (productError.code === 'PGRST116') {
+            // No rows - product not found or RLS blocking
+            return { data: null, error: null };
+          }
+          
+          const { data: productAny, error: anyError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('slug', slug)
+            .single();
+          
+          if (anyError) {
+            return { data: null, error: anyError };
+          }
+          
+          // Load brands and categories separately if main query succeeded
+          if (productAny) {
+            if (productAny.brand_id) {
+              const { data: brand } = await supabase
+                .from('brands')
+                .select('name, slug, logo_url, description')
+                .eq('id', productAny.brand_id)
+                .single();
+              productAny.brands = brand;
+            }
+            
+            if (productAny.category_id) {
+              const { data: category } = await supabase
+                .from('categories')
+                .select('name, slug')
+                .eq('id', productAny.category_id)
+                .single();
+              productAny.categories = category;
+            }
+            
+            return { data: productAny, error: null };
+          }
+          
+          return { data: null, error: anyError };
+        }
+        
+        // Load related data separately if product query succeeded
+        if (productOnly) {
+          if (productOnly.brand_id) {
+            const { data: brand } = await supabase
+              .from('brands')
+              .select('name, slug, logo_url, description')
+              .eq('id', productOnly.brand_id)
+              .maybeSingle(); // Use maybeSingle to not fail if brand doesn't exist
+            productOnly.brands = brand;
+          }
+          
+          if (productOnly.category_id) {
+            const { data: category } = await supabase
+              .from('categories')
+              .select('name, slug')
+              .eq('id', productOnly.category_id)
+              .maybeSingle();
+            productOnly.categories = category;
+          }
+          
+          return { data: productOnly, error: null };
+        }
+      }
+      
+      if (error && error.code === 'PGRST116') {
+        // No rows returned - product not found
+        return { data: null, error: null };
+      }
+      
+      return { data, error };
+    } catch (err) {
+      return { data: null, error: err };
+    }
   },
 
   // Get featured products
@@ -621,52 +640,34 @@ export const productService = {
 
   // Create product
   async createProduct(productData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_products', []);
-      const now = new Date().toISOString();
-      const newItem = { id: `demo-product-${Date.now()}`, created_at: now, updated_at: now, ...productData };
-      const updated = [newItem, ...list];
-      jsonStorage.set('demo_products', updated);
-      return { data: newItem, error: null };
-    }
     const { data, error } = await supabase
       .from('products')
       .insert(productData)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Update product
   async updateProduct(id, productData) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_products', []);
-      const updated = list.map(p => (p.id === id ? { ...p, ...productData, updated_at: new Date().toISOString() } : p));
-      const data = updated.find(p => p.id === id) || null;
-      jsonStorage.set('demo_products', updated);
-      return { data, error: null };
-    }
     const { data, error } = await supabase
       .from('products')
       .update(productData)
       .eq('id', id)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Delete product
   async deleteProduct(id) {
-    if (!isSupabaseConfigured) {
-      const list = jsonStorage.get('demo_products', []);
-      const updated = list.filter(p => p.id !== id);
-      jsonStorage.set('demo_products', updated);
-      return { error: null };
-    }
     const { error } = await supabase
       .from('products')
       .delete()
       .eq('id', id);
+    
     return { error };
   },
 
@@ -804,15 +805,6 @@ export const wishlistService = {
 export const orderService = {
   // Get user orders
   async getUserOrders(userId) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      const items = jsonStorage.get('demo_order_items', []);
-      const userOrders = orders.filter(o => o.user_id === userId).map(o => ({
-        ...o,
-        order_items: items.filter(i => i.order_id === o.id)
-      }));
-      return { data: userOrders, error: null };
-    }
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -824,19 +816,12 @@ export const orderService = {
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+    
     return { data, error };
   },
 
   // Get all orders (admin)
   async getAllOrders(filters = {}) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      const items = jsonStorage.get('demo_order_items', []);
-      let list = orders.map(o => ({ ...o, order_items: items.filter(i => i.order_id === o.id) }));
-      if (filters.status) list = list.filter(o => o.status === filters.status);
-      if (filters.payment_status) list = list.filter(o => o.payment_status === filters.payment_status);
-      return { data: list, error: null, count: list.length };
-    }
     // Keep it simple to avoid 400s from schema differences: fetch orders only
     let query = supabase
       .from('orders')
@@ -857,73 +842,54 @@ export const orderService = {
 
   // Get order by ID
   async getOrderById(orderId) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      const items = jsonStorage.get('demo_order_items', []);
-      const order = orders.find(o => String(o.id) === String(orderId)) || null;
-      if (!order) return { data: null, error: null };
-      return { data: { ...order, order_items: items.filter(i => String(i.order_id) === String(orderId)) }, error: null };
-    }
     // Avoid 400s from missing FKs by using two-step fetch without embeddings
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .select('*')
       .eq('id', orderId)
       .single();
-    if (orderErr) return { data: null, error: orderErr };
+    
+    if (orderErr) {
+      return { data: null, error: orderErr };
+    }
 
     const { data: items, error: itemsErr } = await supabase
       .from('order_items')
       .select('*')
       .eq('order_id', orderId);
-    if (itemsErr) return { data: { ...order, order_items: [] }, error: null };
+    
+    if (itemsErr) {
+      return { data: { ...order, order_items: [] }, error: null };
+    }
 
     return { data: { ...order, order_items: items || [] }, error: null };
   },
 
   // Create order
   async createOrder(orderData) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      orders.push({ ...orderData, created_at: new Date().toISOString() });
-      jsonStorage.set('demo_orders', orders);
-      return { data: orderData, error: null };
-    }
     const { data, error } = await supabase
       .from('orders')
       .insert(orderData)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Update order status
   async updateOrderStatus(orderId, status, additionalData = {}) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      const updated = orders.map(o => o.id === orderId ? { ...o, status, ...additionalData } : o);
-      jsonStorage.set('demo_orders', updated);
-      const found = updated.find(o => o.id === orderId) || null;
-      return { data: found, error: null };
-    }
     const { data, error } = await supabase
       .from('orders')
       .update({ status, ...additionalData })
       .eq('id', orderId)
       .select()
       .single();
+    
     return { data, error };
   },
 
   // Update payment status
   async updatePaymentStatus(orderId, paymentStatus, paymentId = null) {
-    if (!isSupabaseConfigured) {
-      const orders = jsonStorage.get('demo_orders', []);
-      const updated = orders.map(o => o.id === orderId ? { ...o, payment_status: paymentStatus, payment_id: paymentId } : o);
-      jsonStorage.set('demo_orders', updated);
-      const found = updated.find(o => o.id === orderId) || null;
-      return { data: found, error: null };
-    }
     const { data, error } = await supabase
       .from('orders')
       .update({ 
@@ -933,6 +899,7 @@ export const orderService = {
       .eq('id', orderId)
       .select()
       .single();
+    
     return { data, error };
   }
 };
@@ -1043,33 +1010,15 @@ export const analyticsService = {
 export const fileService = {
   // Upload file to storage
   async uploadFile(bucket, file, fileName, options = {}) {
-    if (!isSupabaseConfigured) {
-      // In demo mode, persist as a data URL so it survives reloads/localStorage
-      const toDataUrl = (file) => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      try {
-        const dataUrl = await toDataUrl(file);
-        return { data: { path: dataUrl }, error: null };
-      } catch (e) {
-        return { data: null, error: e };
-      }
-    }
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, options);
+    
     return { data, error };
   },
 
   // Get public URL
   getPublicUrl(bucket, fileName) {
-    if (!isSupabaseConfigured) {
-      // fileName will already be an object URL in demo mode
-      return fileName;
-    }
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(fileName);
@@ -1122,10 +1071,6 @@ export const fileService = {
 export const attributeService = {
   // Get all attributes
   async getAttributes() {
-    if (!isSupabaseConfigured) {
-      return { data: jsonStorage.get('attributes', []), error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attributes')
       .select('*')
@@ -1136,12 +1081,6 @@ export const attributeService = {
 
   // Get attribute by ID
   async getAttribute(id) {
-    if (!isSupabaseConfigured) {
-      const attributes = jsonStorage.get('attributes', []);
-      const attribute = attributes.find(a => a.id === id);
-      return { data: attribute || null, error: attribute ? null : new Error('Attribute not found') };
-    }
-    
     const { data, error } = await supabase
       .from('attributes')
       .select('*')
@@ -1153,19 +1092,6 @@ export const attributeService = {
 
   // Create attribute
   async createAttribute(attributeData) {
-    if (!isSupabaseConfigured) {
-      const attributes = jsonStorage.get('attributes', []);
-      const newAttribute = {
-        id: Date.now().toString(),
-        ...attributeData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      attributes.push(newAttribute);
-      jsonStorage.set('attributes', attributes);
-      return { data: newAttribute, error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attributes')
       .insert([attributeData])
@@ -1177,17 +1103,6 @@ export const attributeService = {
 
   // Update attribute
   async updateAttribute(id, attributeData) {
-    if (!isSupabaseConfigured) {
-      const attributes = jsonStorage.get('attributes', []);
-      const index = attributes.findIndex(a => a.id === id);
-      if (index === -1) {
-        return { data: null, error: new Error('Attribute not found') };
-      }
-      attributes[index] = { ...attributes[index], ...attributeData, updated_at: new Date().toISOString() };
-      jsonStorage.set('attributes', attributes);
-      return { data: attributes[index], error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attributes')
       .update(attributeData)
@@ -1200,13 +1115,6 @@ export const attributeService = {
 
   // Delete attribute
   async deleteAttribute(id) {
-    if (!isSupabaseConfigured) {
-      const attributes = jsonStorage.get('attributes', []);
-      const filtered = attributes.filter(a => a.id !== id);
-      jsonStorage.set('attributes', filtered);
-      return { data: null, error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attributes')
       .delete()
@@ -1217,12 +1125,6 @@ export const attributeService = {
 
   // Get attribute values
   async getAttributeValues(attributeId) {
-    if (!isSupabaseConfigured) {
-      const values = jsonStorage.get('attribute_values', []);
-      const attributeValues = values.filter(v => v.attribute_id === attributeId);
-      return { data: attributeValues, error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attribute_values')
       .select('*')
@@ -1234,19 +1136,6 @@ export const attributeService = {
 
   // Create attribute value
   async createAttributeValue(valueData) {
-    if (!isSupabaseConfigured) {
-      const values = jsonStorage.get('attribute_values', []);
-      const newValue = {
-        id: Date.now().toString(),
-        ...valueData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      values.push(newValue);
-      jsonStorage.set('attribute_values', values);
-      return { data: newValue, error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attribute_values')
       .insert([valueData])
@@ -1258,17 +1147,6 @@ export const attributeService = {
 
   // Update attribute value
   async updateAttributeValue(id, valueData) {
-    if (!isSupabaseConfigured) {
-      const values = jsonStorage.get('attribute_values', []);
-      const index = values.findIndex(v => v.id === id);
-      if (index === -1) {
-        return { data: null, error: new Error('Attribute value not found') };
-      }
-      values[index] = { ...values[index], ...valueData, updated_at: new Date().toISOString() };
-      jsonStorage.set('attribute_values', values);
-      return { data: values[index], error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attribute_values')
       .update(valueData)
@@ -1281,13 +1159,6 @@ export const attributeService = {
 
   // Delete attribute value
   async deleteAttributeValue(id) {
-    if (!isSupabaseConfigured) {
-      const values = jsonStorage.get('attribute_values', []);
-      const filtered = values.filter(v => v.id !== id);
-      jsonStorage.set('attribute_values', filtered);
-      return { data: null, error: null };
-    }
-    
     const { data, error } = await supabase
       .from('attribute_values')
       .delete()

@@ -10,19 +10,62 @@ const AdminLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [adminUser, setAdminUser] = useState(null);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Check for admin session
-    const storedAdmin = jsonStorage.get('adminUser', null);
-    if (storedAdmin) {
-      setAdminUser(storedAdmin);
-    }
-  }, []);
+    // Check for admin session - check both localStorage and sessionStorage
+    const checkAdminStatus = () => {
+      const storedAdmin = jsonStorage.get('adminUser', null);
+      const isAdminFlag = safeStorage.getItem('isAdmin');
+      
+      console.log('🔍 [AdminLayout] Checking admin status:', {
+        hasStoredAdmin: !!storedAdmin,
+        isAdminFlag: isAdminFlag,
+        userEmail: user?.email
+      });
+      
+      if (storedAdmin) {
+        setAdminUser(storedAdmin);
+        setIsChecking(false);
+        return;
+      }
+      
+      // Also check if user email matches known admin emails
+      const knownAdminEmails = ['admin@catalix.com', 'demo@example.com'];
+      if (user?.email && knownAdminEmails.includes(user.email)) {
+        console.log('✅ [AdminLayout] User email matches admin, granting access');
+        setAdminUser({ email: user.email, name: user.firstName || 'Admin' });
+        setIsChecking(false);
+        return;
+      }
+      
+      setIsChecking(false);
+    };
+    
+    checkAdminStatus();
+  }, [user]);
 
-  // Check if user is admin
-  const isAdmin = adminUser || user?.email === 'demo@example.com';
+  // Check if user is admin - allow access if adminUser exists or isAdmin flag is set
+  const isAdmin = adminUser || safeStorage.getItem('isAdmin') === 'true' || user?.email === 'demo@example.com' || user?.email === 'admin@catalix.com';
+
+  // Show loading while checking
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking admin access...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
+    console.warn('🚫 [AdminLayout] Access denied:', {
+      hasAdminUser: !!adminUser,
+      isAdminFlag: safeStorage.getItem('isAdmin'),
+      userEmail: user?.email
+    });
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="card p-8 max-w-md text-center">
@@ -48,7 +91,9 @@ const AdminLayout = ({ children }) => {
   ];
 
   const handleLogout = async () => {
-    // Clear admin session
+    console.log('🚪 [AdminLayout] Logging out admin...');
+    // Clear admin session - clear both jsonStorage and safeStorage
+    jsonStorage.remove('adminUser');
     safeStorage.removeItem('adminUser');
     safeStorage.removeItem('isAdmin');
     setAdminUser(null);
@@ -56,6 +101,8 @@ const AdminLayout = ({ children }) => {
     // Also logout regular user if logged in
     try {
       await logout();
+    } catch (e) {
+      console.warn('⚠️ Error during logout:', e);
     } finally {
       navigate('/admin/login');
     }

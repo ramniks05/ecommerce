@@ -20,27 +20,38 @@ const AdminLogin = () => {
     setError('');
 
     try {
+      console.log('🔐 Admin login attempt:', formData.email);
+      console.log('🔧 Supabase configured:', isSupabaseConfigured);
+
       // Try Supabase Auth + admin_users role/permissions when configured
       if (isSupabaseConfigured) {
+        console.log('📡 Attempting Supabase auth...');
         // Timeout guard in case auth stalls on some networks/browsers
-        const withTimeout = (p, ms = 8000) => Promise.race([
+        const withTimeout = (p, ms = 10000) => Promise.race([
           p,
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+          new Promise((_, rej) => setTimeout(() => rej(new Error('Authentication timeout after 10s')), ms))
         ]);
         let data, authError;
         try {
           const res = await withTimeout(authService.signIn(formData.email, formData.password));
-          data = res.data; authError = res.error;
+          data = res.data; 
+          authError = res.error;
+          console.log('📡 Supabase auth response:', { hasData: !!data, hasError: !!authError });
         } catch (e) {
           authError = e;
+          console.error('❌ Supabase auth error:', e);
         }
+        
         if (!authError && data && data.user) {
+          console.log('✅ Supabase auth successful, checking admin role...');
           // Authenticated: verify admin role
           const { data: adminRow, error: dbError } = await supabase
             .from('admin_users')
             .select('*')
             .eq('email', formData.email)
             .single();
+
+          console.log('👤 Admin users query:', { hasData: !!adminRow, error: dbError });
 
           if (!dbError && adminRow) {
             // Ensure a user_profiles row exists and mark as admin for RLS policies
@@ -55,9 +66,10 @@ const AdminLogin = () => {
                   is_active: true,
                   updated_at: new Date().toISOString()
                 });
+              console.log('✅ Admin profile updated');
             } catch (e) {
               // non-fatal; continue login even if profile upsert fails
-              console.warn('Admin profile upsert warning:', e?.message || e);
+              console.warn('⚠️ Admin profile upsert warning:', e?.message || e);
             }
             const adminUser = {
               id: adminRow.id,
@@ -68,26 +80,35 @@ const AdminLogin = () => {
             };
             jsonStorage.set('adminUser', adminUser);
             safeStorage.setItem('isAdmin', 'true');
+            console.log('✅ Admin login successful, redirecting...');
             navigate('/admin');
             return;
           }
 
-          setError('Authenticated, but this user is not in admin_users');
-          return;
+          console.warn('⚠️ User authenticated but not in admin_users table, falling back to local...');
+          // Continue to local fallback
+        } else {
+          console.warn('⚠️ Supabase auth failed:', authError?.message || authError);
+          // Continue to local fallback
         }
-        // If auth fails, fall back to local list
       }
 
+      // Fallback to local admin list
+      console.log('🔄 Trying local admin credentials...');
       const result = verifyAdminCredentials(formData.email, formData.password);
+      console.log('🔄 Local admin result:', result);
+      
       if (result.success) {
         jsonStorage.set('adminUser', result.user);
         safeStorage.setItem('isAdmin', 'true');
+        console.log('✅ Local admin login successful, redirecting...');
         navigate('/admin');
       } else {
-        setError(result.error);
+        setError(result.error || 'Invalid email or password. Please check your credentials.');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      console.error('❌ Login exception:', err);
+      setError(err?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -191,11 +212,27 @@ const AdminLogin = () => {
                 <p className="font-medium">Super Admin:</p>
                 <p>Email: admin@catalix.com</p>
                 <p>Password: admin123</p>
+                <button
+                  onClick={() => {
+                    setFormData({ email: 'admin@catalix.com', password: 'admin123' });
+                  }}
+                  className="mt-2 text-xs text-primary-600 hover:text-primary-700 underline"
+                >
+                  Fill credentials
+                </button>
               </div>
               <div className="bg-gray-50 p-3 rounded-md">
                 <p className="font-medium">Demo Admin:</p>
                 <p>Email: demo@example.com</p>
                 <p>Password: demo123</p>
+                <button
+                  onClick={() => {
+                    setFormData({ email: 'demo@example.com', password: 'demo123' });
+                  }}
+                  className="mt-2 text-xs text-primary-600 hover:text-primary-700 underline"
+                >
+                  Fill credentials
+                </button>
               </div>
             </div>
           </div>

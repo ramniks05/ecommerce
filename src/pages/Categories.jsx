@@ -9,23 +9,74 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const loadData = async () => {
+      setLoading(true);
+      
       try {
+        // Fetch only active products
         const [categoriesResult, productsResult] = await Promise.all([
-          categoryService.getCategories(),
-          productService.getProducts()
+          categoryService.getCategories().catch(err => {
+            console.error('Categories error:', err);
+            return { data: null, error: err };
+          }),
+          productService.getActiveProducts().catch(err => {
+            console.error('Products error:', err);
+            return { data: null, error: err };
+          })
         ]);
 
-        if (categoriesResult.data) setCategories(categoriesResult.data);
-        if (productsResult.data) setProducts(productsResult.data);
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+
+        if (categoriesResult?.error) {
+          console.error('Categories fetch error:', categoriesResult.error);
+          setCategories([]);
+        } else {
+          setCategories(Array.isArray(categoriesResult?.data) ? categoriesResult.data : []);
+        }
+
+        if (productsResult?.error) {
+          console.error('Products fetch error:', productsResult.error);
+          setProducts([]);
+        } else {
+          setProducts(Array.isArray(productsResult?.data) ? productsResult.data : []);
+        }
       } catch (error) {
         console.error('Error loading categories data:', error);
+        if (isMounted) {
+          setCategories([]);
+          setProducts([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadData();
+    // Add timeout as safety net
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 10000);
+
+    loadData().finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   const getCategoryProductCount = (categoryId) => {

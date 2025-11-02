@@ -46,17 +46,11 @@ export const authService = {
             },
           ], { onConflict: 'id' });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-      } else {
-        // No session yet; profile will be upserted on first successful login
-        console.log('No session after signup; will create profile on first login');
+        // Profile error is handled silently - profile will be created on first login if needed
       }
 
       return { data: authData, error: null };
     } catch (error) {
-      console.error('Sign up error:', error);
       return { data: null, error };
     }
   },
@@ -101,7 +95,6 @@ export const authService = {
 
       return { data, error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
       return { data: null, error };
     }
   },
@@ -130,7 +123,6 @@ export const authService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Google sign in error:', error);
       return { data: null, error };
     }
   },
@@ -138,24 +130,16 @@ export const authService = {
   // Sign in with Phone (OTP) - Supabase Native
   async signInWithPhone(phone) {
     try {
-      console.log('📱 Sending OTP via Supabase Phone Auth to:', phone);
-      
       const { data, error } = await supabase.auth.signInWithOtp({
         phone,
         options: {
-          channel: 'sms', // Send via SMS
+          channel: 'sms',
         },
       });
 
-      if (error) {
-        console.error('Supabase Phone Auth error:', error);
-        throw error;
-      }
-      
-      console.log('✅ Supabase OTP sent successfully');
+      if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Phone sign in error:', error);
       return { data: null, error };
     }
   },
@@ -163,20 +147,13 @@ export const authService = {
   // Verify OTP - Supabase Native
   async verifyOTP(phone, token) {
     try {
-      console.log('🔍 Verifying OTP via Supabase Phone Auth');
-      
       const { data, error } = await supabase.auth.verifyOtp({
         phone,
         token,
         type: 'sms',
       });
 
-      if (error) {
-        console.error('Supabase OTP verification error:', error);
-        throw error;
-      }
-
-      console.log('✅ OTP verified successfully via Supabase');
+      if (error) throw error;
 
       // Create or update user profile
       if (data.user) {
@@ -194,13 +171,11 @@ export const authService = {
               phone_verified: true,
             },
           ]);
-          console.log('✅ User profile created');
         }
       }
 
       return { data, error: null };
     } catch (error) {
-      console.error('OTP verification error:', error);
       return { data: null, error };
     }
   },
@@ -212,7 +187,6 @@ export const authService = {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error('Sign out error:', error);
       return { error };
     }
   },
@@ -231,12 +205,24 @@ export const authService = {
       }
 
       if (user) {
-        // Fetch user profile
-        const { data: profile } = await supabase
+        // Fetch user profile (fail silently if RLS blocks access)
+        const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
           .single();
+
+        // Ignore profile errors (403/406) - profile may not exist or RLS may block access
+        if (profileError) {
+          // Return user without profile if profile fetch fails
+          return { 
+            data: { 
+              user, 
+              profile: null 
+            }, 
+            error: null 
+          };
+        }
 
         return { 
           data: { 
@@ -249,9 +235,9 @@ export const authService = {
 
       return { data: null, error: null };
     } catch (error) {
-      // Only log actual errors, not session missing
-      if (!error.message || !error.message.includes('Auth session missing')) {
-        console.error('Get current user error:', error);
+      // Suppress "Auth session missing" error - this is normal when not configured
+      if (error.message && error.message.includes('Auth session missing')) {
+        return { data: null, error: null };
       }
       return { data: null, error };
     }
@@ -265,7 +251,6 @@ export const authService = {
       if (error) throw error;
       return { data: session, error: null };
     } catch (error) {
-      console.error('Get session error:', error);
       return { data: null, error };
     }
   },
@@ -283,7 +268,6 @@ export const authService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Update profile error:', error);
       return { data: null, error };
     }
   },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiEdit, FiEye, FiEyeOff, FiImage, FiPlus, FiSearch, FiStar, FiTrash2, FiUpload, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import Modal from '../../components/Modal';
@@ -784,7 +784,7 @@ const ProductsManagement = () => {
                     >
                       <option value="">Select Category</option>
                       {categories.map(category => (
-                        <>
+                        <React.Fragment key={category.id}>
                           {/* parent */}
                           <option value={category.id}>{category.name}</option>
                           {category.children && category.children.map(subcategory => (
@@ -792,7 +792,7 @@ const ProductsManagement = () => {
                               &nbsp;&nbsp;└ {subcategory.name}
                             </option>
                           ))}
-                        </>
+                        </React.Fragment>
                       ))}
                     </select>
                   </div>
@@ -820,8 +820,8 @@ const ProductsManagement = () => {
                       type="number"
                       step="0.01"
                       required
-                      value={formData.price}
-                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                      value={formData.price === null || formData.price === undefined ? '' : formData.price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value === '' ? '' : e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -833,8 +833,8 @@ const ProductsManagement = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={formData.original_price}
-                      onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
+                      value={formData.original_price === null || formData.original_price === undefined ? '' : formData.original_price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value === '' ? '' : e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -846,8 +846,8 @@ const ProductsManagement = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={formData.cost_price}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                      value={formData.cost_price === null || formData.cost_price === undefined ? '' : formData.cost_price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value === '' ? '' : e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -861,8 +861,11 @@ const ProductsManagement = () => {
                     </label>
                     <input
                       type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) => setFormData(prev => ({ ...prev, stock_quantity: parseInt(e.target.value) }))}
+                      value={formData.stock_quantity === null || formData.stock_quantity === undefined ? '' : formData.stock_quantity}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : (isNaN(parseInt(e.target.value)) ? '' : parseInt(e.target.value));
+                        setFormData(prev => ({ ...prev, stock_quantity: value }));
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -873,8 +876,11 @@ const ProductsManagement = () => {
                     </label>
                     <input
                       type="number"
-                      value={formData.min_stock_level}
-                      onChange={(e) => setFormData(prev => ({ ...prev, min_stock_level: parseInt(e.target.value) }))}
+                      value={formData.min_stock_level === null || formData.min_stock_level === undefined ? '' : formData.min_stock_level}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : (isNaN(parseInt(e.target.value)) ? '' : parseInt(e.target.value));
+                        setFormData(prev => ({ ...prev, min_stock_level: value }));
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -1367,8 +1373,8 @@ const ProductsManagement = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={formData.weight}
-                      onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value }))}
+                      value={formData.weight === null || formData.weight === undefined ? '' : formData.weight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value === '' ? '' : e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -1385,10 +1391,10 @@ const ProductsManagement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={formData.dimensions.length}
+                        value={formData.dimensions?.length || ''}
                         onChange={(e) => setFormData(prev => ({ 
                           ...prev, 
-                          dimensions: { ...prev.dimensions, length: e.target.value }
+                          dimensions: { ...(prev.dimensions || {}), length: e.target.value === '' ? '' : e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
@@ -1398,10 +1404,10 @@ const ProductsManagement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={formData.dimensions.width}
+                        value={formData.dimensions?.width || ''}
                         onChange={(e) => setFormData(prev => ({ 
                           ...prev, 
-                          dimensions: { ...prev.dimensions, width: e.target.value }
+                          dimensions: { ...(prev.dimensions || {}), width: e.target.value === '' ? '' : e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
@@ -1411,10 +1417,10 @@ const ProductsManagement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={formData.dimensions.height}
+                        value={formData.dimensions?.height || ''}
                         onChange={(e) => setFormData(prev => ({ 
                           ...prev, 
-                          dimensions: { ...prev.dimensions, height: e.target.value }
+                          dimensions: { ...(prev.dimensions || {}), height: e.target.value === '' ? '' : e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
@@ -1432,8 +1438,11 @@ const ProductsManagement = () => {
                       type="number"
                       min="0"
                       max="100"
-                      value={formData.discount_percentage}
-                      onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
+                      value={formData.discount_percentage === null || formData.discount_percentage === undefined ? 0 : formData.discount_percentage}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : (isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value));
+                        setFormData(prev => ({ ...prev, discount_percentage: value }));
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -1445,8 +1454,11 @@ const ProductsManagement = () => {
                     <input
                       type="number"
                       min="0"
-                      value={formData.min_stock_level}
-                      onChange={(e) => setFormData(prev => ({ ...prev, min_stock_level: parseInt(e.target.value) || 0 }))}
+                      value={formData.min_stock_level === null || formData.min_stock_level === undefined ? '' : formData.min_stock_level}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : (isNaN(parseInt(e.target.value)) ? '' : parseInt(e.target.value));
+                        setFormData(prev => ({ ...prev, min_stock_level: value }));
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>

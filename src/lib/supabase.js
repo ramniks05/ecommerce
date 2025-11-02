@@ -12,20 +12,26 @@ const isSupabaseConfigured = supabaseUrl &&
 
 // Show helpful message if not configured
 if (!isSupabaseConfigured) {
-  console.log('%c🔧 Supabase Not Configured', 'color: orange; font-weight: bold; font-size: 14px');
-  console.log('%cApp is running in DEMO MODE', 'color: orange; font-size: 12px');
-  console.log('%c📝 To enable database features:', 'color: blue; font-size: 12px');
-  console.log('1. Create .env.local file in project root');
-  console.log('2. Add your Supabase credentials');
-  console.log('3. See: env.local.template for example');
-  console.log('4. Restart server with: npm run dev');
-  console.log('%c✅ Demo features work without setup!', 'color: green; font-size: 12px');
+  console.warn('%c⚠️ Supabase Not Configured', 'color: orange; font-weight: bold; font-size: 14px');
+  console.warn('%cPlease configure Supabase in .env.local', 'color: orange; font-size: 12px');
 }
 
-// Create Supabase client with fallback values for demo mode
+// Create Supabase client with proper configuration
+const supabaseConfig = {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  },
+  db: {
+    schema: 'public'
+  }
+};
+
 const supabase = createClient(
   supabaseUrl || 'https://demo.supabase.co',
-  supabaseAnonKey || 'demo-key'
+  supabaseAnonKey || 'demo-key',
+  supabaseConfig
 );
 
 export { supabase, isSupabaseConfigured };
@@ -110,4 +116,3 @@ export const supabaseHelpers = {
     return data;
   },
 };
-

@@ -13,30 +13,93 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const loadData = async () => {
+      setLoading(true);
+      
       try {
+        // Fetch only active products
         const [brandsResult, categoriesResult, productsResult] = await Promise.all([
-          brandService.getBrands(),
-          categoryService.getCategories(),
-          productService.getProducts()
+          brandService.getBrands().catch(err => {
+            console.error('Brands error:', err);
+            return { data: null, error: err };
+          }),
+          categoryService.getCategories().catch(err => {
+            console.error('Categories error:', err);
+            return { data: null, error: err };
+          }),
+          productService.getActiveProducts().catch(err => {
+            console.error('Products error:', err);
+            return { data: null, error: err };
+          })
         ]);
 
-        if (brandsResult.data) setBrands(brandsResult.data);
-        if (categoriesResult.data) setCategories(categoriesResult.data);
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+
+        // Validate and set data
+        if (brandsResult?.error) {
+          console.error('Brands fetch error:', brandsResult.error);
+          setBrands([]);
+        } else {
+          setBrands(Array.isArray(brandsResult?.data) ? brandsResult.data : []);
+        }
+
+        if (categoriesResult?.error) {
+          console.error('Categories fetch error:', categoriesResult.error);
+          setCategories([]);
+        } else {
+          setCategories(Array.isArray(categoriesResult?.data) ? categoriesResult.data : []);
+        }
         
-        if (productsResult.data) {
-          const products = productsResult.data;
-          setFeaturedProducts(products.filter(p => p.is_featured).slice(0, 8));
-          setNewProducts(products.filter(p => p.is_new).slice(0, 4));
+        if (productsResult?.error) {
+          console.error('Products fetch error:', productsResult.error);
+          setFeaturedProducts([]);
+          setNewProducts([]);
+        } else {
+          const products = Array.isArray(productsResult?.data) ? productsResult.data : [];
+          setFeaturedProducts(products.filter(p => p.is_featured && p.is_active).slice(0, 8));
+          setNewProducts(products.filter(p => p.is_new && p.is_active).slice(0, 4));
         }
       } catch (error) {
         console.error('Error loading home data:', error);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setBrands([]);
+          setCategories([]);
+          setFeaturedProducts([]);
+          setNewProducts([]);
+        }
       } finally {
-        setLoading(false);
+        // Only update loading state if component is still mounted
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadData();
+    // Add timeout as safety net
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 10000); // Increased to 10 seconds
+
+    loadData().finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   if (loading) {

@@ -9,6 +9,14 @@ const Brands = () => {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Add timeout as safety net
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 8000);
+    
     (async () => {
       try {
         const { data, error } = await brandService.getBrands();
@@ -23,10 +31,17 @@ const Brands = () => {
         console.error('Unexpected error fetching brands:', err);
         if (isMounted) setBrands([]);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
       }
     })();
-    return () => { isMounted = false; };
+    
+    return () => { 
+      isMounted = false;
+      clearTimeout(timeout);
+    };
   }, []);
 
   if (loading) {

@@ -19,8 +19,8 @@ import Home from './pages/Home';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import OrderConfirmation from './pages/OrderConfirmation';
-import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Orders from './pages/Orders';
 import ProductDetail from './pages/ProductDetail';
 import Products from './pages/Products';
 import Profile from './pages/Profile';
@@ -35,6 +35,7 @@ import BannerManagement from './pages/admin/BannerManagement';
 import BrandManagement from './pages/admin/BrandManagement';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import AdminDashboard from './pages/admin/Dashboard';
+import Diagnostics from './pages/admin/Diagnostics';
 import Health from './pages/admin/Health';
 import AdminLogin from './pages/admin/Login';
 import OrdersManagement from './pages/admin/OrdersManagement';
@@ -87,6 +88,7 @@ function AppContent() {
                   <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
                   <Route path="/admin/attributes" element={<AdminLayout><AttributeManagement /></AdminLayout>} />
                   <Route path="/admin/health" element={<AdminLayout><Health /></AdminLayout>} />
+                  <Route path="/admin/diagnostics" element={<AdminLayout><Diagnostics /></AdminLayout>} />
                   <Route path="/admin/settings" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
                 </Routes>
               </main>

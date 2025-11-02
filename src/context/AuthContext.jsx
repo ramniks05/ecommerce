@@ -18,27 +18,33 @@ export const AuthProvider = ({ children }) => {
 
   // Check for Supabase session AFTER initial render
   useEffect(() => {
-    // Skip Supabase check for now - just use localStorage
-    // This prevents blocking on startup
-    console.log('Auth initialized with localStorage user');
-    
-    // Optional: Check Supabase in background (non-blocking)
+    // Initialize from localStorage first, then check Supabase in background
     const checkSessionInBackground = async () => {
       try {
         const { data } = await authService.getCurrentUser();
         if (data && data.user && data.profile) {
-          setUser({
+          const newUser = {
             id: data.user.id,
             email: data.user.email,
             firstName: data.profile.first_name,
             lastName: data.profile.last_name,
             phone: data.profile.phone,
             avatar: data.profile.avatar_url,
+          };
+          
+          // Only update if user data actually changed to prevent unnecessary re-renders
+          setUser(prev => {
+            if (prev && prev.id === newUser.id && 
+                prev.email === newUser.email && 
+                prev.firstName === newUser.firstName &&
+                prev.lastName === newUser.lastName) {
+              return prev; // No change, return previous state
+            }
+            return newUser;
           });
         }
       } catch (error) {
         // Silently fail - no Supabase session
-        console.log('No Supabase session found');
       }
     };
 
@@ -46,24 +52,44 @@ export const AuthProvider = ({ children }) => {
     checkSessionInBackground();
 
     // Listen to auth state changes (non-blocking)
+    // IMPORTANT: Filter out TOKEN_REFRESHED events to prevent unnecessary refreshes
     let subscription = null;
     try {
       const result = authService.onAuthStateChange(async (event, session) => {
+        // Ignore TOKEN_REFRESHED events - they happen automatically and don't indicate a real auth change
+        if (event === 'TOKEN_REFRESHED') {
+          return;
+        }
+
         if (session && session.user) {
-          try {
-            const { data } = await authService.getCurrentUser();
-            if (data && data.profile) {
-              setUser({
-                id: data.user.id,
-                email: data.user.email,
-                firstName: data.profile.first_name,
-                lastName: data.profile.last_name,
-                phone: data.profile.phone,
-                avatar: data.profile.avatar_url,
-              });
+          // Only fetch profile on meaningful events (SIGNED_IN, USER_UPDATED, etc.)
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+            try {
+              const { data } = await authService.getCurrentUser();
+              if (data && data.profile) {
+                // Only update if user data actually changed to prevent unnecessary re-renders
+                setUser(prev => {
+                  const newUser = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    firstName: data.profile.first_name,
+                    lastName: data.profile.last_name,
+                    phone: data.profile.phone,
+                    avatar: data.profile.avatar_url,
+                  };
+                  // Compare to prevent unnecessary updates
+                  if (prev && prev.id === newUser.id && 
+                      prev.email === newUser.email && 
+                      prev.firstName === newUser.firstName &&
+                      prev.lastName === newUser.lastName) {
+                    return prev; // No change, return previous state
+                  }
+                  return newUser;
+                });
+              }
+            } catch (error) {
+              console.log('Error fetching user profile:', error);
             }
-          } catch (error) {
-            console.log('Error fetching user profile:', error);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);

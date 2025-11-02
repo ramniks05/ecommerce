@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { productService, attributeService, fileService } from '../services/supabaseService';
+import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../context/NotificationContext';
@@ -26,30 +27,78 @@ const ProductDetail = () => {
 
   useEffect(() => {
     const loadProduct = async () => {
+      if (!slug) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const { data: products, error } = await productService.getProducts();
-        if (error) throw error;
+        const { data: product, error } = await productService.getProductBySlug(slug);
         
-        const foundProduct = products.find(p => p.slug === slug || String(p.id) === String(slug));
-        if (foundProduct) {
-          setProduct(foundProduct);
+        if (error) {
+          console.error('Error loading product:', error);
           
-          // Load attributes and their values
-          const { data: attrs } = await attributeService.getAttributes();
-          setAttributes(attrs || []);
+          // If slug query fails, try fallback to ID
+          if (slug && !isNaN(slug)) {
+            try {
+              const { data: productById, error: idError } = await supabase
+                .from('products')
+                .select(`
+                  *,
+                  brands(name, slug, logo_url, description),
+                  categories(name, slug)
+                `)
+                .eq('id', slug)
+                .single();
+              
+              if (!idError && productById) {
+                setProduct(productById);
+              } else {
+                setLoading(false);
+                return;
+              }
+            } catch (fallbackError) {
+              console.error('Fallback query failed:', fallbackError);
+              setLoading(false);
+              return;
+            }
+          } else {
+            setLoading(false);
+            return;
+          }
+        } else if (product) {
+          // Ensure product has required fields
+          if (!product.name || !product.price) {
+            console.error('Product data incomplete');
+            setLoading(false);
+            return;
+          }
+          setProduct(product);
           
-          // Load attribute values for each attribute
-          const valuesPromises = (attrs || []).map(async (attr) => {
-            const { data: values } = await attributeService.getAttributeValues(attr.id);
-            return { attributeId: attr.id, values: values || [] };
-          });
-          
-          const valuesResults = await Promise.all(valuesPromises);
-          const valuesMap = {};
-          valuesResults.forEach(({ attributeId, values }) => {
-            valuesMap[attributeId] = values;
-          });
-          setAttributeValues(valuesMap);
+          // Load attributes and their values (don't block on this)
+          try {
+            const { data: attrs } = await attributeService.getAttributes();
+            setAttributes(attrs || []);
+            
+            // Load attribute values for each attribute
+            const valuesPromises = (attrs || []).map(async (attr) => {
+              try {
+                const { data: values } = await attributeService.getAttributeValues(attr.id);
+                return { attributeId: attr.id, values: values || [] };
+              } catch (err) {
+                return { attributeId: attr.id, values: [] };
+              }
+            });
+            
+            const valuesResults = await Promise.all(valuesPromises);
+            const valuesMap = {};
+            valuesResults.forEach(({ attributeId, values }) => {
+              valuesMap[attributeId] = values;
+            });
+            setAttributeValues(valuesMap);
+          } catch (attrError) {
+            // Don't block product display if attributes fail
+          }
         }
       } catch (error) {
         console.error('Error loading product:', error);
@@ -58,7 +107,12 @@ const ProductDetail = () => {
       }
     };
 
-    loadProduct();
+    // Add timeout to prevent infinite spinner
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000);
+
+    loadProduct().finally(() => clearTimeout(timeout));
   }, [slug]);
 
   if (loading) {
@@ -73,10 +127,48 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-        <Link to="/products" className="text-primary-600 hover:text-primary-700">
-          ← Back to Products
-        </Link>
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+          <p className="text-gray-600 mb-6">
+            The product with slug "<strong>{slug}</strong>" could not be found.
+          </p>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
+            <h3 className="font-semibold text-yellow-900 mb-2">Possible Reasons:</h3>
+            <ul className="list-disc list-inside text-sm text-yellow-800 space-y-1">
+              <li>Product doesn't exist in the database</li>
+              <li>Product has <code className="bg-yellow-100 px-1 rounded">is_active = false</code> (RLS policy blocks inactive products)</li>
+              <li>Row Level Security (RLS) policies are blocking access</li>
+              <li>Product slug doesn't match exactly (case-sensitive)</li>
+            </ul>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+            <h3 className="font-semibold text-blue-900 mb-2">How to Fix:</h3>
+            <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
+              <li>Check the browser console (F12) for detailed error messages</li>
+              <li>Go to Supabase Dashboard → Table Editor → products</li>
+              <li>Verify the product exists and has <code className="bg-blue-100 px-1 rounded">is_active = true</code></li>
+              <li>Check RLS policies in Supabase Dashboard → Authentication → Policies</li>
+              <li>If needed, run the SQL script: <code className="bg-blue-100 px-1 rounded">disable-rls-for-testing.sql</code></li>
+            </ol>
+          </div>
+
+          <div className="flex gap-4 justify-center">
+            <Link 
+              to="/products" 
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              ← Back to Products
+            </Link>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-outline inline-flex items-center gap-2"
+            >
+              🔄 Retry
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

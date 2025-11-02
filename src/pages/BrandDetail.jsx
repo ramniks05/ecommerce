@@ -45,21 +45,44 @@ const BrandDetail = () => {
   const brandCategories = ['all', ...new Set(products.map(p => p.category?.name || p.categories?.name || p.categoryName).filter(Boolean))];
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const loadBrandData = async () => {
+      setLoading(true);
+      
       try {
+        // Fetch only active products
         const [brandsResult, productsResult] = await Promise.all([
-          brandService.getBrands(),
-          productService.getProducts()
+          brandService.getBrands().catch(err => {
+            console.error('Brands error:', err);
+            return { data: null, error: err };
+          }),
+          productService.getActiveProducts().catch(err => {
+            console.error('Products error:', err);
+            return { data: null, error: err };
+          })
         ]);
 
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+
         let foundBrand = null;
-        if (brandsResult.data) {
+        if (brandsResult?.error) {
+          console.error('Brands fetch error:', brandsResult.error);
+          setBrand(null);
+        } else if (brandsResult?.data) {
           foundBrand = brandsResult.data.find(b => b.slug === slug) || null;
           setBrand(foundBrand);
         }
 
-        if (productsResult.data) {
+        if (productsResult?.error) {
+          console.error('Products fetch error:', productsResult.error);
+          setProducts([]);
+        } else if (productsResult?.data) {
           const brandProducts = productsResult.data.filter(p => {
+            // Only show active products
+            if (!p.is_active) return false;
             const nestedSlug = (p.brand?.slug || p.brands?.slug);
             const nestedId = (p.brand?.id || p.brands?.id);
             return (
@@ -68,15 +91,41 @@ const BrandDetail = () => {
             );
           });
           setProducts(brandProducts);
+        } else {
+          setProducts([]);
         }
       } catch (error) {
         console.error('Error loading brand data:', error);
+        if (isMounted) {
+          setProducts([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadBrandData();
+    // Add timeout as safety net
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 10000);
+
+    loadBrandData().finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [slug]);
 
   const isLoading = loading;

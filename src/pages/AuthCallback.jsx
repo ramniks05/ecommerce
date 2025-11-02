@@ -27,7 +27,8 @@ const AuthCallback = () => {
             .eq('id', session.user.id)
             .single();
 
-          if (profileError && profileError.code === 'PGRST116') {
+          // Handle missing profile (PGRST116) or RLS errors (403/406)
+          if (profileError && (profileError.code === 'PGRST116' || profileError.code === 'PGRST301' || profileError.status === 403 || profileError.status === 406)) {
             // Profile doesn't exist, create it
             const { data: newProfile } = await supabase
               .from('user_profiles')
