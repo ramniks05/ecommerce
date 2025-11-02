@@ -8,7 +8,7 @@ import { orderService } from '../services/supabaseService';
 import { jsonStorage } from '../utils/safeStorage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import Breadcrumb from '../components/Breadcrumb';
-import { FiCheck } from 'react-icons/fi';
+import { FiCheck, FiX } from 'react-icons/fi';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -34,6 +34,7 @@ const Checkout = () => {
     cardExpiry: '',
     cardCVV: '',
   });
+  const [errors, setErrors] = useState({});
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 5000 ? 0 : 50;
@@ -41,10 +42,99 @@ const Checkout = () => {
   const total = subtotal + shipping + tax;
 
   const handleInputChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateShippingInfo = () => {
+    const newErrors = {};
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\+?\d{10,12}$/.test(formData.phone.replace(/\s|-/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    }
+    
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+    
+    if (!formData.state.trim()) {
+      newErrors.state = 'State is required';
+    }
+    
+    if (!formData.zipCode.trim()) {
+      newErrors.zipCode = 'ZIP code is required';
+    } else if (!/^\d{5,6}$/.test(formData.zipCode)) {
+      newErrors.zipCode = 'Please enter a valid ZIP code';
+    }
+    
+    if (!formData.country.trim()) {
+      newErrors.country = 'Country is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePaymentInfo = () => {
+    const newErrors = {};
+    
+    if (formData.paymentMethod === 'card') {
+      if (!formData.cardNumber.trim()) {
+        newErrors.cardNumber = 'Card number is required';
+      } else if (!/^\d{4}\s?\d{4}\s?\d{4}\s?\d{4}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
+        newErrors.cardNumber = 'Please enter a valid 16-digit card number';
+      }
+      
+      if (!formData.cardName.trim()) {
+        newErrors.cardName = 'Cardholder name is required';
+      }
+      
+      if (!formData.cardExpiry.trim()) {
+        newErrors.cardExpiry = 'Expiry date is required';
+      } else if (!/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
+        newErrors.cardExpiry = 'Please enter expiry date in MM/YY format';
+      }
+      
+      if (!formData.cardCVV.trim()) {
+        newErrors.cardCVV = 'CVV is required';
+      } else if (!/^\d{3,4}$/.test(formData.cardCVV)) {
+        newErrors.cardCVV = 'Please enter a valid CVV (3-4 digits)';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -60,26 +150,18 @@ const Checkout = () => {
 
     if (step === 1) {
       // Validate shipping info
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.address) {
-        showNotification('Please fill in all required fields', 'error');
+      if (!validateShippingInfo()) {
         return;
       }
       setStep(2);
     } else if (step === 2) {
       // Validate payment info
-      if (formData.paymentMethod === 'razorpay') {
-        // Razorpay - no card details needed
-        setStep(3);
-      } else if (formData.paymentMethod === 'card') {
-        if (!formData.cardNumber || !formData.cardName || !formData.cardExpiry || !formData.cardCVV) {
-          showNotification('Please fill in all payment details', 'error');
+      if (formData.paymentMethod === 'card') {
+        if (!validatePaymentInfo()) {
           return;
         }
-        setStep(3);
-      } else {
-        // COD or other methods
-        setStep(3);
       }
+      setStep(3);
     } else if (step === 3) {
       // Place order with payment
       const orderId = `ORD-${Date.now()}`;
@@ -262,9 +344,15 @@ const Checkout = () => {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.firstName ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.firstName && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.firstName}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -275,9 +363,15 @@ const Checkout = () => {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.lastName ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.lastName && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.lastName}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -288,9 +382,15 @@ const Checkout = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.email ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -301,9 +401,15 @@ const Checkout = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.phone ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.phone && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.phone}
+                      </p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -314,9 +420,15 @@ const Checkout = () => {
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.address ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.address && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.address}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -327,9 +439,15 @@ const Checkout = () => {
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.city ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.city && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.city}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -340,9 +458,15 @@ const Checkout = () => {
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.state ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.state && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.state}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -353,9 +477,15 @@ const Checkout = () => {
                       name="zipCode"
                       value={formData.zipCode}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.zipCode ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.zipCode && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.zipCode}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -366,9 +496,15 @@ const Checkout = () => {
                       name="country"
                       value={formData.country}
                       onChange={handleInputChange}
-                      className="input-field"
+                      className={`input-field ${errors.country ? 'border-red-500' : ''}`}
                       required
                     />
+                    {errors.country && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.country}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -446,9 +582,15 @@ const Checkout = () => {
                         value={formData.cardNumber}
                         onChange={handleInputChange}
                         placeholder="1234 5678 9012 3456"
-                        className="input-field"
+                        className={`input-field ${errors.cardNumber ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.cardNumber && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                          <FiX size={12} />
+                          {errors.cardNumber}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -460,9 +602,15 @@ const Checkout = () => {
                         value={formData.cardName}
                         onChange={handleInputChange}
                         placeholder="John Doe"
-                        className="input-field"
+                        className={`input-field ${errors.cardName ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.cardName && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                          <FiX size={12} />
+                          {errors.cardName}
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -475,9 +623,15 @@ const Checkout = () => {
                           value={formData.cardExpiry}
                           onChange={handleInputChange}
                           placeholder="MM/YY"
-                          className="input-field"
+                          className={`input-field ${errors.cardExpiry ? 'border-red-500' : ''}`}
                           required
                         />
+                        {errors.cardExpiry && (
+                          <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                            <FiX size={12} />
+                            {errors.cardExpiry}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -489,9 +643,15 @@ const Checkout = () => {
                           value={formData.cardCVV}
                           onChange={handleInputChange}
                           placeholder="123"
-                          className="input-field"
+                          className={`input-field ${errors.cardCVV ? 'border-red-500' : ''}`}
                           required
                         />
+                        {errors.cardCVV && (
+                          <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                            <FiX size={12} />
+                            {errors.cardCVV}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

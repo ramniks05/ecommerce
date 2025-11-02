@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiEdit, FiExternalLink, FiEye, FiEyeOff, FiImage, FiPlus, FiStar, FiTrash2, FiX } from 'react-icons/fi';
+import { FiEdit, FiExternalLink, FiEye, FiEyeOff, FiImage, FiPlus, FiStar, FiTrash2, FiX, FiAlertCircle } from 'react-icons/fi';
 import ImageUploader from '../../components/ImageUploader';
 import Modal from '../../components/Modal';
 import { brandService, fileService } from '../../services/supabaseService';
@@ -25,6 +25,7 @@ const BrandManagement = () => {
     sort_order: 0
   });
   const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setLoading(false), 4000);
@@ -43,9 +44,40 @@ const BrandManagement = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Brand name is required';
+    }
+    
+    if (!formData.slug.trim()) {
+      newErrors.slug = 'Slug is required';
+    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
+    }
+    
+    if (formData.website_url && !/^https?:\/\/.+/.test(formData.website_url)) {
+      newErrors.website_url = 'Please enter a valid URL starting with http:// or https://';
+    }
+    
+    if (formData.founded_year && (isNaN(formData.founded_year) || formData.founded_year < 1800 || formData.founded_year > new Date().getFullYear())) {
+      newErrors.founded_year = 'Please enter a valid year';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setUploading(true);
+    setErrors({});
 
     try {
       console.log('Saving brand with data:', formData);
@@ -373,9 +405,26 @@ const BrandManagement = () => {
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        handleNameChange(e.target.value);
+                        if (errors.name) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.name;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.name ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.name && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -386,9 +435,29 @@ const BrandManagement = () => {
                       type="text"
                       required
                       value={formData.slug}
-                      onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, slug: e.target.value }));
+                        if (errors.slug) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.slug;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.slug ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.slug && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.slug}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      URL-friendly identifier (lowercase, numbers, hyphens only)
+                    </p>
                   </div>
                 </div>
 
@@ -446,9 +515,27 @@ const BrandManagement = () => {
                     <input
                       type="url"
                       value={formData.website_url}
-                      onChange={(e) => setFormData(prev => ({ ...prev, website_url: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, website_url: e.target.value }));
+                        if (errors.website_url) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.website_url;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.website_url ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="https://example.com"
                     />
+                    {errors.website_url && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.website_url}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -458,9 +545,29 @@ const BrandManagement = () => {
                     <input
                       type="number"
                       value={formData.founded_year}
-                      onChange={(e) => setFormData(prev => ({ ...prev, founded_year: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, founded_year: e.target.value }));
+                        if (errors.founded_year) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.founded_year;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                        errors.founded_year ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 1990"
+                      min="1800"
+                      max={new Date().getFullYear()}
                     />
+                    {errors.founded_year && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <FiX size={12} />
+                        {errors.founded_year}
+                      </p>
+                    )}
                   </div>
 
                   <div>
