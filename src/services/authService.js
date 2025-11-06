@@ -100,10 +100,14 @@ export const authService = {
   },
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // (Removed: Google OAuth and Phone OTP methods)
 =======
   // (Removed: Google OAuth and Phone OTP methods)
 >>>>>>> ed5bf4b (feat(b2b): add B2B/B2C product types, request-price flow, admin enquiries\n\n- DB: add product_type column, create price_enquiries table (SQL files)\n- Admin: product_type in form; new /admin/enquiries page\n- Storefront: hide price and replace cart with Request Price for B2B\n- Modal: stable portal-based RequestPriceModal\n- Filters: add product type filter on Products page\n- Auth: simplify to email/password; remove Google OAuth and SMS/OTP flows\n- Cleanup: delete OTP/SMS services and OAuth callback; remove LoginOptions/PhoneVerification)
+=======
+  // (Removed: Google OAuth and Phone OTP methods)
+>>>>>>> ed5bf4b3e39721b3db51809fe0034038a937871d
 
   // Sign out
   async signOut() {

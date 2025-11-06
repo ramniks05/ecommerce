@@ -113,7 +113,10 @@ const Products = () => {
             }
           }
         }
+<<<<<<< HEAD
 >>>>>>> ed5bf4b (feat(b2b): add B2B/B2C product types, request-price flow, admin enquiries\n\n- DB: add product_type column, create price_enquiries table (SQL files)\n- Admin: product_type in form; new /admin/enquiries page\n- Storefront: hide price and replace cart with Request Price for B2B\n- Modal: stable portal-based RequestPriceModal\n- Filters: add product type filter on Products page\n- Auth: simplify to email/password; remove Google OAuth and SMS/OTP flows\n- Cleanup: delete OTP/SMS services and OAuth callback; remove LoginOptions/PhoneVerification)
+=======
+>>>>>>> ed5bf4b3e39721b3db51809fe0034038a937871d
       } catch (error) {
         console.error('Error loading data:', error);
         // Only update state if component is still mounted
@@ -139,6 +142,7 @@ const Products = () => {
 
     // Scroll to top on route navigation
     window.scrollTo({ top: 0, behavior: 'smooth' });
+<<<<<<< HEAD
 
     // Load data
     loadData().finally(() => {
@@ -154,6 +158,10 @@ const Products = () => {
         clearTimeout(timeoutId);
       }
     };
+=======
+    loadData();
+    return () => clearTimeout(timeout);
+>>>>>>> ed5bf4b3e39721b3db51809fe0034038a937871d
   }, [location.key, categorySlug]);
 
   const filteredProducts = useMemo(() => {
