@@ -8,11 +8,9 @@ import Footer from './components/Footer';
 import Header from './components/Header';
 import Notification from './components/Notification';
 
-import AuthCallback from './pages/AuthCallback';
 import BrandDetail from './pages/BrandDetail';
 import Brands from './pages/Brands';
 import Cart from './pages/Cart';
-import Categories from './pages/Categories';
 import CategoryDetail from './pages/CategoryDetail';
 import Checkout from './pages/Checkout';
 import Home from './pages/Home';
@@ -41,6 +39,7 @@ import AdminLogin from './pages/admin/Login';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import ProductsManagement from './pages/admin/ProductsManagement';
 import UserManagement from './pages/admin/UserManagement';
+import Enquiries from './pages/admin/Enquiries';
 
 function AppContent() {
   const location = useLocation();
@@ -63,14 +62,14 @@ function AppContent() {
                   <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/brands" element={<Brands />} />
                   <Route path="/brands/:slug" element={<BrandDetail />} />
-                  <Route path="/categories" element={<Categories />} />
+                  
                   <Route path="/category/:slug" element={<CategoryDetail />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/orders/:orderId" element={<OrderDetail />} />
@@ -82,6 +81,7 @@ function AppContent() {
                   <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
                   <Route path="/admin/products" element={<AdminLayout><ProductsManagement /></AdminLayout>} />
                   <Route path="/admin/orders" element={<AdminLayout><OrdersManagement /></AdminLayout>} />
+                  <Route path="/admin/enquiries" element={<AdminLayout><Enquiries /></AdminLayout>} />
                   <Route path="/admin/banners" element={<AdminLayout><BannerManagement /></AdminLayout>} />
                   <Route path="/admin/brands" element={<AdminLayout><BrandManagement /></AdminLayout>} />
                   <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />

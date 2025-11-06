@@ -1004,6 +1004,53 @@ export const analyticsService = {
 };
 
 // =============================================
+// PRICE ENQUIRY SERVICES
+// =============================================
+
+export const enquiryService = {
+  // Get all price enquiries (admin)
+  async getAllEnquiries(filters = {}) {
+    let query = supabase
+      .from('price_enquiries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.search) {
+      const s = filters.search;
+      query = query.or(
+        `name.ilike.%${s}%,email.ilike.%${s}%,company.ilike.%${s}%,product_name.ilike.%${s}%`
+      );
+    }
+
+    const { data, error } = await query;
+    return { data, error };
+  },
+
+  // Update enquiry status
+  async updateEnquiryStatus(id, status) {
+    const { data, error } = await supabase
+      .from('price_enquiries')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  // Delete enquiry
+  async deleteEnquiry(id) {
+    const { error } = await supabase
+      .from('price_enquiries')
+      .delete()
+      .eq('id', id);
+    return { error };
+  }
+};
+
+// =============================================
 // FILE UPLOAD SERVICES
 // =============================================
 

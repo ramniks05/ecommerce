@@ -99,86 +99,11 @@ export const authService = {
     }
   },
 
-  // Sign in with Google OAuth
-  async signInWithGoogle() {
-    try {
-      const siteUrl = (typeof window !== 'undefined' && window.location && window.location.origin)
-        ? window.location.origin
-        : '';
-      const envSiteUrl = (typeof import.meta !== 'undefined' && import.meta.env)
-        ? (import.meta.env.VITE_SITE_URL || import.meta.env.VITE_PUBLIC_SITE_URL || '')
-        : '';
-      const redirectBase = envSiteUrl || siteUrl;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${redirectBase}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      return { data: null, error };
-    }
-  },
-
-  // Sign in with Phone (OTP) - Supabase Native
-  async signInWithPhone(phone) {
-    try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        phone,
-        options: {
-          channel: 'sms',
-        },
-      });
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      return { data: null, error };
-    }
-  },
-
-  // Verify OTP - Supabase Native
-  async verifyOTP(phone, token) {
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone,
-        token,
-        type: 'sms',
-      });
-
-      if (error) throw error;
-
-      // Create or update user profile
-      if (data.user) {
-        const { data: existingProfile } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .single();
-
-        if (!existingProfile) {
-          await supabase.from('user_profiles').insert([
-            {
-              user_id: data.user.id,
-              phone: data.user.phone,
-              phone_verified: true,
-            },
-          ]);
-        }
-      }
-
-      return { data, error: null };
-    } catch (error) {
-      return { data: null, error };
-    }
-  },
+<<<<<<< HEAD
+  // (Removed: Google OAuth and Phone OTP methods)
+=======
+  // (Removed: Google OAuth and Phone OTP methods)
+>>>>>>> ed5bf4b (feat(b2b): add B2B/B2C product types, request-price flow, admin enquiries\n\n- DB: add product_type column, create price_enquiries table (SQL files)\n- Admin: product_type in form; new /admin/enquiries page\n- Storefront: hide price and replace cart with Request Price for B2B\n- Modal: stable portal-based RequestPriceModal\n- Filters: add product type filter on Products page\n- Auth: simplify to email/password; remove Google OAuth and SMS/OTP flows\n- Cleanup: delete OTP/SMS services and OAuth callback; remove LoginOptions/PhoneVerification)
 
   // Sign out
   async signOut() {

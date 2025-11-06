@@ -19,6 +19,11 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addToCart = (product, quantity = 1) => {
+    // Prevent B2B products from being added to cart
+    if (product.product_type === 'b2b') {
+      throw new Error('B2B products cannot be added to cart. Please request a price quote.');
+    }
+    
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {

@@ -1,20 +1,37 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiShoppingCart } from 'react-icons/fi';
+import { FiHeart, FiShoppingCart, FiDollarSign } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../context/NotificationContext';
 import { fileService } from '../services/supabaseService';
+import RequestPriceModal from './RequestPriceModal';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { showNotification } = useNotification();
+  const [showRequestPriceModal, setShowRequestPriceModal] = useState(false);
+  
+  const productType = String(product.product_type || 'b2c').toLowerCase();
+  const isB2B = productType === 'b2b';
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (isB2B) {
+      setShowRequestPriceModal(true);
+      return;
+    }
     addToCart(product);
     showNotification('Product added to cart!');
+  };
+
+  const handleRequestPrice = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowRequestPriceModal(true);
   };
 
   const handleWishlistToggle = (e) => {
@@ -52,6 +69,7 @@ const ProductCard = ({ product }) => {
 
   const fallbackSlug = (product.slug && String(product.slug).trim()) || String(product.id || '').trim() || '';
   return (
+    <>
     <Link to={`/products/${fallbackSlug}`} className="card group hover:shadow-lg transition-shadow duration-300">
       <div className="product-card-container bg-white">
         <img
@@ -87,13 +105,23 @@ const ProductCard = ({ product }) => {
               <FiHeart size={16} />
             )}
           </button>
-          <button
-            onClick={handleAddToCart}
-            className="bg-white rounded-full p-2 md:p-2.5 shadow-lg hover:bg-primary-50 transition-colors active:scale-95"
-            aria-label="Add to cart"
-          >
-            <FiShoppingCart size={16} />
-          </button>
+          {isB2B ? (
+            <button
+              onClick={handleRequestPrice}
+              className="bg-white rounded-full p-2 md:p-2.5 shadow-lg hover:bg-primary-50 transition-colors active:scale-95"
+              aria-label="Request price"
+            >
+              <FiDollarSign size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              className="bg-white rounded-full p-2 md:p-2.5 shadow-lg hover:bg-primary-50 transition-colors active:scale-95"
+              aria-label="Add to cart"
+            >
+              <FiShoppingCart size={16} />
+            </button>
+          )}
         </div>
 
         {/* Out of Stock Overlay */}
@@ -120,16 +148,37 @@ const ProductCard = ({ product }) => {
           <span className="text-xs md:text-sm text-gray-400">({product.review_count ?? product.reviewCount ?? 0})</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-lg md:text-xl font-bold text-gray-900">₹{product.price}</span>
-          {(product.originalPrice ?? product.mrp) && (
-            <span className="text-xs md:text-sm text-gray-400 line-through">
-              ₹{product.originalPrice ?? product.mrp}
-            </span>
-          )}
-        </div>
+        {isB2B ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRequestPriceModal(true);
+              }}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors text-sm font-medium"
+            >
+              Request Price
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-lg md:text-xl font-bold text-gray-900">₹{product.price}</span>
+            {(product.originalPrice ?? product.mrp) && (
+              <span className="text-xs md:text-sm text-gray-400 line-through">
+                ₹{product.originalPrice ?? product.mrp}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Link>
+    <RequestPriceModal
+      product={product}
+      isOpen={showRequestPriceModal}
+      onClose={() => setShowRequestPriceModal(false)}
+    />
+    </>
   );
 };
 

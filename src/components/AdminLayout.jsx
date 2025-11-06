@@ -86,6 +86,7 @@ const AdminLayout = ({ children }) => {
     { icon: FiTag, label: 'Categories', path: '/admin/categories' },
     { icon: FiLayers, label: 'Attributes', path: '/admin/attributes' },
     { icon: FiShoppingBag, label: 'Orders', path: '/admin/orders' },
+    { icon: FiShoppingBag, label: 'Enquiries', path: '/admin/enquiries' },
     { icon: FiUsers, label: 'Users', path: '/admin/users' },
     { icon: FiSettings, label: 'Settings', path: '/admin/settings' },
   ];
