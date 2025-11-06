@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import LoginOptions from '../components/LoginOptions';
 import Breadcrumb from '../components/Breadcrumb';
 import authService from '../services/authService';
 
@@ -12,6 +11,10 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleEmailLogin = async (email, password) => {
     try {
@@ -83,52 +86,6 @@ const Login = () => {
     }
   };
 
-  const handleMobileLogin = async (phone) => {
-    try {
-      // For demo purposes, create a mock user for mobile login
-      // In production, you would verify the phone number and find/create the user
-      const mockUser = {
-        id: 'mobile-user-' + Date.now(),
-        email: phone + '@mobile.catalix.com',
-        firstName: 'Mobile',
-        lastName: 'User',
-        phone: phone,
-        phoneVerified: true
-      };
-
-      // Update auth context
-      login(phone + '@mobile.catalix.com', 'mobile-login'); // Using phone as email for demo
-      
-      showNotification('Mobile login successful!', 'success');
-      navigate(redirectTo);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Mobile login failed. Please try again.' };
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      console.log('Starting Google OAuth login...');
-      
-      // Use Supabase Google OAuth
-      const { data, error } = await authService.signInWithGoogle();
-      
-      if (error) {
-        console.error('Google OAuth error:', error);
-        return { success: false, error: 'Google login failed. Please try again.' };
-      }
-      
-      // Google OAuth will redirect to auth callback page
-      // No need to navigate here
-      console.log('Google OAuth initiated successfully');
-      return { success: true };
-    } catch (error) {
-      console.error('Google login error:', error);
-      return { success: false, error: 'Google login failed. Please try again.' };
-    }
-  };
-
   const handleBack = () => {
     navigate('/');
   };
@@ -151,21 +108,42 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm font-semibold text-blue-900 mb-2">Login Options:</p>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p><strong>Email:</strong> demo@example.com / demo123</p>
-            <p><strong>Google:</strong> Click "Continue with Google" below</p>
-          </div>
+        <div className="card p-6">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setSubmitting(true);
+              await handleEmailLogin(email, password);
+              setSubmitting(false);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={handleBack} className="text-sm text-gray-600 hover:text-gray-900">Back</button>
+              <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? 'Logging in...' : 'Login'}</button>
+            </div>
+          </form>
         </div>
-
-        <LoginOptions
-          onEmailLogin={handleEmailLogin}
-          onMobileLogin={handleMobileLogin}
-          onGoogleLogin={handleGoogleLogin}
-          onBack={handleBack}
-        />
       </div>
     </div>
   );

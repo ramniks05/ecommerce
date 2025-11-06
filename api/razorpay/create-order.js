@@ -11,7 +11,19 @@ export default async function handler(req, res) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!keyId || !keySecret) {
-      res.status(500).json({ error: 'Razorpay credentials missing on server' });
+      const missing = [];
+      if (!keyId) missing.push('RAZORPAY_KEY_ID');
+      if (!keySecret) missing.push('RAZORPAY_KEY_SECRET');
+      
+      console.error(`❌ Razorpay server credentials missing: ${missing.join(', ')}`);
+      console.error('Set these in Vercel: Project Settings → Environment Variables');
+      console.error('Note: These are SERVER variables (no VITE_ prefix)');
+      
+      res.status(500).json({ 
+        error: 'Razorpay credentials missing on server',
+        missing: missing,
+        hint: 'Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel environment variables (without VITE_ prefix)'
+      });
       return;
     }
 

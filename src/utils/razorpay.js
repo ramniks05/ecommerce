@@ -27,8 +27,19 @@ export const initializeRazorpay = async (orderData, onSuccess, onFailure) => {
 
   // Razorpay configuration
   const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
-  if (!keyId || keyId.includes('rzp_test_XXXXX')) {
-    onFailure('Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in environment.');
+  
+  // Better error message for debugging
+  if (!keyId) {
+    console.error('❌ VITE_RAZORPAY_KEY_ID is not set in environment variables.');
+    console.error('For local: Set in .env.local file');
+    console.error('For Vercel: Set in Project Settings → Environment Variables');
+    console.error('Then redeploy to apply changes.');
+    onFailure('Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in environment variables. See console for details.');
+    return;
+  }
+  
+  if (keyId.includes('rzp_test_XXXXX') || keyId.includes('your-key') || keyId.trim() === '') {
+    onFailure('Razorpay key appears to be a placeholder. Please set a valid VITE_RAZORPAY_KEY_ID.');
     return;
   }
 

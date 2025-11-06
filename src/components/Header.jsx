@@ -88,9 +88,7 @@ const Header = () => {
             <Link to="/brands" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
               Brands
             </Link>
-            <Link to="/categories" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
-              Categories
-            </Link>
+            {/* Categories link removed as categories page is not required */}
           </nav>
 
           {/* Actions */}
@@ -225,13 +223,7 @@ const Header = () => {
             >
               Brands
             </Link>
-            <Link
-              to="/categories"
-              onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700 hover:text-primary-600 font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Categories
-            </Link>
+            {/* Categories link removed in mobile menu */}
             
             {/* Mobile-only links */}
             <div className="sm:hidden border-t border-gray-200 mt-2 pt-2">

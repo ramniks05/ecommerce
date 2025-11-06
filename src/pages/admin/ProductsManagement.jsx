@@ -49,6 +49,7 @@ const ProductsManagement = () => {
     is_new: false,
     is_bestseller: false,
     is_active: true,
+    product_type: 'b2c',
     meta_title: '',
     meta_description: ''
   });
@@ -162,6 +163,7 @@ const ProductsManagement = () => {
         is_new: !!formData.is_new,
         is_bestseller: !!formData.is_bestseller,
         is_active: !!formData.is_active,
+        product_type: formData.product_type || 'b2c',
         meta_title: formData.meta_title || null,
         meta_description: formData.meta_description || null,
       };
@@ -218,6 +220,7 @@ const ProductsManagement = () => {
       is_new: product.is_new || false,
       is_bestseller: product.is_bestseller || false,
       is_active: product.is_active,
+      product_type: product.product_type || 'b2c',
       meta_title: product.meta_title || '',
       meta_description: product.meta_description || ''
     });
@@ -287,6 +290,7 @@ const ProductsManagement = () => {
       is_new: false,
       is_bestseller: false,
       is_active: true,
+      product_type: 'b2c',
       meta_title: '',
       meta_description: ''
     });
@@ -808,6 +812,25 @@ const ProductsManagement = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
+                </div>
+
+                {/* Product Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Product Type *
+                  </label>
+                  <select
+                    required
+                    value={formData.product_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, product_type: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="b2c">B2C (Business to Consumer) - Show price, allow cart</option>
+                    <option value="b2b">B2B (Business to Business) - Hide price, request quote</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    B2C products show prices and can be added to cart. B2B products require price enquiry.
+                  </p>
                 </div>
 
                 {/* Pricing */}
