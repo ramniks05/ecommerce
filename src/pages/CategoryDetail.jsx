@@ -65,8 +65,8 @@ const CategoryDetail = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Category Not Found</h1>
-        <Link to="/categories" className="text-primary-600 hover:text-primary-700">
-          ← Back to Categories
+        <Link to="/" className="text-primary-600 hover:text-primary-700">
+          ← Back to Home
         </Link>
       </div>
     );
@@ -159,7 +159,7 @@ const CategoryDetail = () => {
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb
           items={[
-            { label: 'Categories', path: '/categories' },
+            { label: 'Home', path: '/' },
             { label: category.name }
           ]}
         />

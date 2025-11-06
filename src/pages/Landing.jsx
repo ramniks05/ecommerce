@@ -1,16 +1,60 @@
 import { Link } from 'react-router-dom';
-import { brands } from '../data/mockData';
 import BrandSlider from '../components/BrandSlider';
+import { useEffect, useMemo, useState } from 'react';
+import { brandService, categoryService, productService, fileService } from '../services/supabaseService';
 
 const Landing = () => {
-  // Featured 3 brands
-  const featuredBrands = brands.slice(0, 3);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [brandsResult, categoriesResult, productsResult] = await Promise.all([
+          brandService.getBrands(),
+          categoryService.getCategories(),
+          productService.getProducts()
+        ]);
+        if (brandsResult.data) setBrands(brandsResult.data);
+        if (categoriesResult.data) setCategories(categoriesResult.data);
+        if (productsResult.data) setProducts(productsResult.data);
+      } catch (e) {
+        console.error('Error loading landing data:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const featuredBrands = useMemo(() => brands.slice(0, 3), [brands]);
+
+  const brandIdToProductCount = useMemo(() => {
+    const counts = new Map();
+    products.forEach(p => {
+      const id = p.brand_id || p.brand?.id || p.brands?.id;
+      if (id) counts.set(id, (counts.get(id) || 0) + 1);
+    });
+    return counts;
+  }, [products]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Brand Slider */}
       <section className="bg-gray-900">
-        <BrandSlider brands={brands} />
+        <BrandSlider brands={brands} products={products} />
       </section>
 
       {/* About Us Section */}
@@ -18,11 +62,22 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
-              Welcome to Catalix
+              About Us
             </h2>
-            <p className="text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed mb-6 md:mb-8">
-              Your trusted destination for premium branded products in India. Shop authentic brands with confidence.
-            </p>
+            <div className="text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-4 mb-6 md:mb-8 text-left md:text-center">
+              <p>
+                Catalixo Global Pvt. Ltd. is a consumer-first FMCG company delivering national-brand-equivalent products at accessible price points for Indian households.
+              </p>
+              <p>
+                The company plans to offer a growing portfolio of essentials under trusted brands like KlenShine, Japotup, LaRejouis, and Bonheur catering to diverse consumer needs across home care, personal care, pooja needs, and lifestyle accessories.
+              </p>
+              <p>
+                The company is driven by deep consumer insights, strong execution, and a commitment to sustainable growth.
+              </p>
+              <p>
+                With plans of nationwide distribution, a sharp focus on BTL initiatives and social media-driven brand activation, CGPL is building strong visibility and consumer trust across markets.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-8 md:mt-12">
               <div className="text-center">
                 <div className="bg-primary-100 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -30,10 +85,8 @@ const Landing = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">100% Authentic</h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  Genuine products guaranteed
-                </p>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Consumer-First Approach</h3>
+                <p className="text-sm md:text-base text-gray-600">We prioritize customer needs and insights to craft impactful, daily-use products.</p>
               </div>
               <div className="text-center">
                 <div className="bg-primary-100 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -41,10 +94,8 @@ const Landing = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                   </svg>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Premium Quality</h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  Curated trusted brands
-                </p>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Trusted Brands</h3>
+                <p className="text-sm md:text-base text-gray-600">We offer products under recognizable and reliable brands like KlenShine and Bonheur.</p>
               </div>
               <div className="text-center">
                 <div className="bg-primary-100 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -52,10 +103,8 @@ const Landing = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Fast Delivery</h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  Quick shipping across India
-                </p>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Pan-India Presence</h3>
+                <p className="text-sm md:text-base text-gray-600">With a growing network and marketing efforts, we're building trust across the country.</p>
               </div>
             </div>
           </div>
@@ -79,49 +128,51 @@ const Landing = () => {
               <div key={brand.id} className="card overflow-hidden group hover:shadow-xl transition-all duration-300">
                 {/* Brand Image */}
                 <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={brand.heroImage}
-                    alt={brand.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                  {brand.hero_image_url ? (
+                    <img
+                      src={brand.hero_image_url.startsWith('http') || brand.hero_image_url.includes('/storage/v1/object/public/')
+                        ? brand.hero_image_url
+                        : fileService.getPublicUrl('brand-heroes', brand.hero_image_url)}
+                      alt={brand.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                   
                   {/* Brand Logo Overlay */}
                   <div className="absolute top-4 left-4">
                     <div className="bg-white rounded-lg p-3 shadow-lg">
-                      <img
-                        src={brand.logo}
-                        alt={`${brand.name} logo`}
-                        className="h-12 w-auto object-contain"
-                      />
+                      {brand.logo_url ? (
+                        <img
+                          src={brand.logo_url.startsWith('http') || brand.logo_url.includes('/storage/v1/object/public/')
+                            ? brand.logo_url
+                            : fileService.getPublicUrl('brand-logos', brand.logo_url)}
+                          alt={`${brand.name} logo`}
+                          className="h-12 w-auto object-contain"
+                        />
+                      ) : (
+                        <div className="h-12 w-28 bg-gray-100 rounded" />
+                      )}
                     </div>
                   </div>
 
                   {/* Brand Name Overlay */}
                   <div className="absolute bottom-4 left-4 right-4">
                     <h3 className="text-white text-2xl font-bold mb-1">{brand.name}</h3>
-                    <p className="text-white/90 text-sm">{brand.productCount} Products Available</p>
+                    <p className="text-white/90 text-sm">
+                      {(brandIdToProductCount.get(brand.id) || 0)} Products Available
+                    </p>
                   </div>
                 </div>
 
                 {/* Brand Info */}
                 <div className="p-6">
-                  <p className="text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                    {brand.description}
+                  <p className="text-gray-600 mb-6 line-clamp-3 leading-relaxed">
+                    {brand.description || 'Explore premium products from this brand.'}
                   </p>
                   
-                  {/* Stats */}
-                  <div className="flex gap-4 mb-6 pb-6 border-b border-gray-200">
-                    <div>
-                      <div className="text-2xl font-bold text-primary-600">{brand.founded}</div>
-                      <div className="text-xs text-gray-500">Established</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-primary-600">{brand.categories.length}</div>
-                      <div className="text-xs text-gray-500">Categories</div>
-                    </div>
-                  </div>
-
                   {/* Shop Now Button */}
                   <Link
                     to={`/brands/${brand.slug}`}
@@ -152,16 +203,12 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Why Choose Catalix */}
+      {/* Why Choose Us */}
       <section className="py-8 md:py-12 lg:py-20 bg-gradient-to-br from-primary-600 to-primary-800 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-6">
-              Why Choose Catalix?
-            </h2>
-            <p className="text-base md:text-lg lg:text-xl text-white/90 mb-8 md:mb-12">
-              India's most trusted multi-brand platform
-            </p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-6">Why Choose Us</h2>
+            <p className="text-base md:text-lg lg:text-xl text-white/90 mb-8 md:mb-12">India's consumer-first multi-brand platform</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 text-left">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8">
@@ -172,10 +219,8 @@ const Landing = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Secure Shopping</h3>
-                    <p className="text-sm md:text-base text-white/80">
-                      Protected with secure payment gateways
-                    </p>
+                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Consumer-First Approach</h3>
+                    <p className="text-sm md:text-base text-white/80">We prioritize customer needs and insights to craft impactful, daily-use products.</p>
                   </div>
                 </div>
               </div>
@@ -188,10 +233,8 @@ const Landing = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Easy Payments</h3>
-                    <p className="text-sm md:text-base text-white/80">
-                      UPI, cards, net banking & COD
-                    </p>
+                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Trusted Brands</h3>
+                    <p className="text-sm md:text-base text-white/80">Recognizable and reliable brands like KlenShine and Bonheur.</p>
                   </div>
                 </div>
               </div>
@@ -204,118 +247,12 @@ const Landing = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Free Shipping</h3>
-                    <p className="text-sm md:text-base text-white/80">
-                      On orders above ₹5,000
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 lg:p-8">
-                <div className="flex items-start gap-3 md:gap-4">
-                  <div className="bg-white/20 p-2 md:p-3 rounded-lg flex-shrink-0">
-                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Easy Returns</h3>
-                    <p className="text-sm md:text-base text-white/80">
-                      30-day hassle-free returns
-                    </p>
+                    <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Pan-India Presence</h3>
+                    <p className="text-sm md:text-base text-white/80">Growing network and marketing efforts building trust across the country.</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Brands with Shop Now */}
-      <section className="py-12 md:py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Explore Premium Brands
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-              Shop from India's most trusted brands. Quality products, authentic guarantee, and exceptional value.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 md:items-stretch">
-            {featuredBrands.map(brand => (
-              <div key={brand.id} className="card group hover:shadow-2xl transition-all duration-300 flex flex-col">
-                {/* Brand Header Image */}
-                <div className="relative h-48 md:h-56 overflow-hidden">
-                  <img
-                    src={brand.heroImage}
-                    alt={brand.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  
-                  {/* Brand Logo */}
-                  <div className="absolute bottom-4 left-4">
-                    <div className="bg-white rounded-lg p-2.5 shadow-lg">
-                      <img
-                        src={brand.logo}
-                        alt={`${brand.name} logo`}
-                        className="h-10 md:h-12 w-auto object-contain"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Brand Content */}
-                <div className="p-6 md:p-8 flex flex-col flex-1">
-                  {/* Fixed height sections */}
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
-                      {brand.name}
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-6 leading-relaxed">
-                      {brand.description}
-                    </p>
-
-                    {/* Quick Stats */}
-                    <div className="flex items-center justify-around gap-4 mb-6 pb-6 border-b border-gray-200">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-primary-600">{brand.productCount}</div>
-                        <div className="text-sm text-gray-500">Products</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-primary-600">{brand.categories.length}</div>
-                        <div className="text-sm text-gray-500">Categories</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-primary-600">{brand.founded}</div>
-                        <div className="text-sm text-gray-500">Est.</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Flexible spacer */}
-                  <div className="flex-1"></div>
-
-                  {/* Shop Now Button - Always at bottom */}
-                  <Link
-                    to={`/brands/${brand.slug}#products`}
-                    className="btn-primary w-full text-center inline-flex items-center justify-center gap-2 group/btn mt-6"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                    Shop {brand.name}
-                    <svg className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

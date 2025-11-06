@@ -6,7 +6,8 @@ import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../context/NotificationContext';
 import ProductCard from '../components/ProductCard';
 import Breadcrumb from '../components/Breadcrumb';
-import { FiHeart, FiShoppingCart, FiTruck, FiShield, FiRefreshCw, FiImage } from 'react-icons/fi';
+import RequestPriceModal from '../components/RequestPriceModal';
+import { FiHeart, FiShoppingCart, FiTruck, FiShield, FiRefreshCw, FiImage, FiDollarSign } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 
 const ProductDetail = () => {
@@ -19,10 +20,13 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const [showRequestPriceModal, setShowRequestPriceModal] = useState(false);
   
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { showNotification } = useNotification();
+  
+  const isB2B = String(product?.product_type || 'b2c').toLowerCase() === 'b2b';
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -115,6 +119,10 @@ const ProductDetail = () => {
   const relatedProducts = [];
 
   const handleAddToCart = () => {
+    if (isB2B) {
+      setShowRequestPriceModal(true);
+      return;
+    }
     addToCart(product, quantity);
     showNotification(`Added ${quantity} ${quantity === 1 ? 'item' : 'items'} to cart!`);
   };
@@ -195,26 +203,37 @@ const ProductDetail = () => {
         <div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
           
-          {/* Price */}
-          <div className="mb-6">
-            <div className="flex items-baseline gap-4">
-              <span className="text-4xl font-bold text-gray-900">
-                ₹{product.price}
-              </span>
-              {(product.original_price ?? product.mrp) && (
-                <span className="text-2xl text-gray-400 line-through">
-                  ₹{product.original_price ?? product.mrp}
+          {/* Price or B2B Message */}
+          {isB2B ? (
+            <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+              <p className="text-lg font-semibold text-primary-900 mb-2">
+                Price on Request
+              </p>
+              <p className="text-sm text-primary-700">
+                This is a B2B product. Please request a quote for pricing and availability.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-bold text-gray-900">
+                  ₹{product.price}
                 </span>
+                {(product.original_price ?? product.mrp) && (
+                  <span className="text-2xl text-gray-400 line-through">
+                    ₹{product.original_price ?? product.mrp}
+                  </span>
+                )}
+              </div>
+              {(product.discount_percentage || (product.original_price && product.price)) && (
+                <p className="text-green-600 font-medium mt-2">
+                  {product.original_price && product.price ? (
+                    <>You save ₹{(Number(product.original_price) - Number(product.price)).toFixed(2)}</>
+                  ) : null}
+                </p>
               )}
             </div>
-            {(product.discount_percentage || (product.original_price && product.price)) && (
-              <p className="text-green-600 font-medium mt-2">
-                {product.original_price && product.price ? (
-                  <>You save ₹{(Number(product.original_price) - Number(product.price)).toFixed(2)}</>
-                ) : null}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Description */}
           <p className="text-gray-700 mb-6 leading-relaxed">
@@ -237,42 +256,54 @@ const ProductDetail = () => {
           </div>
 
           {/* Quantity & Actions */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Quantity
-            </label>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center border border-gray-300 rounded-lg">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100"
-                >
-                  -
-                </button>
-                <span className="px-6 py-2 font-semibold">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100"
-                >
-                  +
-                </button>
+          {!isB2B && (
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Quantity
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <span className="px-6 py-2 font-semibold">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-gray-600">
+                  {inStock ? `In Stock${Number.isFinite(Number(stockQty)) ? ` (${Number(stockQty)})` : ''}` : 'Out of Stock'}
+                </span>
               </div>
-              <span className="text-gray-600">
-                {inStock ? `In Stock${Number.isFinite(Number(stockQty)) ? ` (${Number(stockQty)})` : ''}` : 'Out of Stock'}
-              </span>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-4 mb-8">
-            <button
-              onClick={handleAddToCart}
-              disabled={!inStock}
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
-            >
-              <FiShoppingCart size={20} />
-              Add to Cart
-            </button>
+            {isB2B ? (
+              <button
+                onClick={() => setShowRequestPriceModal(true)}
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
+              >
+                <FiDollarSign size={20} />
+                Request Price
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={!inStock}
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
+              >
+                <FiShoppingCart size={20} />
+                Add to Cart
+              </button>
+            )}
             <button
               onClick={handleWishlistToggle}
               className="btn-outline px-6"
@@ -471,6 +502,12 @@ const ProductDetail = () => {
           </div>
         </section>
       )}
+      
+      <RequestPriceModal
+        product={product}
+        isOpen={showRequestPriceModal}
+        onClose={() => setShowRequestPriceModal(false)}
+      />
     </div>
   );
 };

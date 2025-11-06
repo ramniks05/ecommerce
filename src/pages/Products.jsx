@@ -9,6 +9,7 @@ import { FiGrid, FiList, FiSliders } from 'react-icons/fi';
 const Products = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
+  const categorySlug = searchParams.get('category') || '';
   
   const location = useLocation();
   const [products, setProducts] = useState([]);
@@ -19,6 +20,8 @@ const Products = () => {
   const [sortBy, setSortBy] = useState('featured');
   const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
 
   useEffect(() => {
     const loadData = async () => {
@@ -31,7 +34,20 @@ const Products = () => {
 
         if (productsResult.data) setProducts(productsResult.data);
         if (brandsResult.data) setBrands(brandsResult.data);
-        if (categoriesResult.data) setCategories(categoriesResult.data);
+        if (categoriesResult.data) {
+          setCategories(categoriesResult.data);
+          
+          // If category slug is in URL, set it as a filter
+          if (categorySlug) {
+            const category = categoriesResult.data.find(c => c.slug === categorySlug);
+            if (category) {
+              setFilters(prev => ({
+                ...prev,
+                categories: [category.id]
+              }));
+            }
+          }
+        }
       } catch (error) {
         console.error('Error loading products data:', error);
       } finally {
@@ -44,7 +60,7 @@ const Products = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     loadData();
     return () => clearTimeout(timeout);
-  }, [location.key]);
+  }, [location.key, categorySlug]);
 
   const filteredProducts = useMemo(() => {
     let result = searchQuery 
@@ -63,6 +79,11 @@ const Products = () => {
     // Apply category filter
     if (filters.categories?.length > 0) {
       result = result.filter(p => filters.categories.includes(p.category_id) || filters.categories.includes(p.categories?.id));
+    }
+
+    // Apply product type filter (b2c/b2b)
+    if (filters.productType) {
+      result = result.filter(p => (p.product_type || 'b2c') === filters.productType);
     }
 
     // Apply price filter
@@ -104,6 +125,23 @@ const Products = () => {
     return result;
   }, [products, sortBy, filters, searchQuery]);
 
+  // Reset to first page when filters/search/sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, JSON.stringify(filters), sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage]);
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -116,51 +154,6 @@ const Products = () => {
 
   return (
     <div>
-      {/* Brand Banner Strip */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-800 py-4 md:py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-white">
-              <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <div>
-                <h3 className="font-bold text-lg md:text-xl">Shop Authentic Brands</h3>
-                <p className="text-sm text-white/90">100% Original Products from Trusted Brands</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 md:gap-6 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto justify-center">
-              {brands.slice(0, 5).map(brand => (
-                <Link
-                  key={brand.id}
-                  to={`/brands/${brand.slug}`}
-                  className="flex-shrink-0 bg-white rounded-lg p-2 hover:shadow-lg transition-all duration-300 hover:scale-105"
-                >
-                  <img
-                    src={(() => {
-                      const raw = brand.logo_url || brand.logo || '';
-                      if (!raw) return '';
-                      return (String(raw).startsWith('http') || String(raw).includes('/storage/v1/object/public/'))
-                        ? raw
-                        : fileService.getPublicUrl('brand-logos', raw);
-                    })()}
-                    alt={brand.name}
-                    className="h-10 md:h-12 w-16 md:w-20 object-contain"
-                  />
-                </Link>
-              ))}
-            </div>
-            
-            <Link 
-              to="/brands" 
-              className="bg-white text-primary-600 px-6 py-2.5 rounded-lg font-semibold hover:bg-primary-50 transition-colors whitespace-nowrap text-sm md:text-base"
-            >
-              View All Brands →
-            </Link>
-          </div>
-        </div>
-      </section>
 
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={[{ label: 'Products' }]} />
@@ -177,7 +170,12 @@ const Products = () => {
       <div className="flex gap-8">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <FilterSidebar filters={filters} onFilterChange={setFilters} />
+          <FilterSidebar 
+            filters={filters} 
+            onFilterChange={setFilters}
+            brands={brands}
+            categories={categories}
+          />
         </aside>
 
         {/* Main Content */}
@@ -241,7 +239,12 @@ const Products = () => {
           {/* Mobile Filter Sidebar */}
           {showFilters && (
             <div className="lg:hidden mb-6">
-              <FilterSidebar filters={filters} onFilterChange={setFilters} />
+              <FilterSidebar 
+                filters={filters} 
+                onFilterChange={setFilters}
+                brands={brands}
+                categories={categories}
+              />
             </div>
           )}
 
@@ -254,7 +257,7 @@ const Products = () => {
                   : 'flex flex-col gap-4'
               }
             >
-              {filteredProducts.map(product => (
+              {paginatedProducts.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -270,6 +273,42 @@ const Products = () => {
                 className="btn-primary"
               >
                 Clear Filters
+              </button>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {filteredProducts.length > pageSize && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded border ${currentPage === 1 ? 'text-gray-400 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`w-9 h-9 rounded border text-sm font-medium ${
+                      currentPage === page
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded border ${currentPage === totalPages ? 'text-gray-400 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
+                Next
               </button>
             </div>
           )}

@@ -1,10 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { fileService } from '../services/supabaseService';
 
-const BrandSlider = ({ brands }) => {
+const BrandSlider = ({ brands, products = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  const brandIdToProductCount = useMemo(() => {
+    const counts = new Map();
+    products.forEach(p => {
+      const id = p.brand_id || p.brand?.id || p.brands?.id;
+      if (id) counts.set(id, (counts.get(id) || 0) + 1);
+    });
+    return counts;
+  }, [products]);
+
+  const brandIdToCategoryCount = useMemo(() => {
+    const map = new Map();
+    products.forEach(p => {
+      const brandId = p.brand_id || p.brand?.id || p.brands?.id;
+      const categoryId = p.category_id || p.category?.id || p.categories?.id;
+      if (brandId && categoryId) {
+        if (!map.has(brandId)) map.set(brandId, new Set());
+        map.get(brandId).add(categoryId);
+      }
+    });
+    const counts = new Map();
+    map.forEach((set, bid) => counts.set(bid, set.size));
+    return counts;
+  }, [products]);
 
   // Auto-play functionality
   useEffect(() => {
@@ -51,11 +76,19 @@ const BrandSlider = ({ brands }) => {
             <Link to={`/brands/${brand.slug}`} className="block h-full">
               {/* Background Image */}
               <div className="absolute inset-0">
-                <img
-                  src={brand.heroImage}
-                  alt={brand.name}
-                  className="w-full h-full object-cover"
-                />
+                {(() => {
+                  const raw = brand.hero_image_url || brand.heroImage || '';
+                  const src = raw
+                    ? (String(raw).startsWith('http') || String(raw).includes('/storage/v1/object/public/'))
+                      ? raw
+                      : fileService.getPublicUrl('brand-heroes', raw)
+                    : '';
+                  return src ? (
+                    <img src={src} alt={brand.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200" />
+                  );
+                })()}
                 <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/90 via-black/70 to-black/50" />
               </div>
 
@@ -66,11 +99,19 @@ const BrandSlider = ({ brands }) => {
                     {/* Brand Logo - Hidden on mobile, visible on tablet+ */}
                     <div className="hidden md:block mb-4 lg:mb-6">
                       <div className="inline-block bg-white rounded-lg md:rounded-xl p-2 md:p-4 shadow-2xl">
-                        <img
-                          src={brand.logo}
-                          alt={`${brand.name} logo`}
-                          className="h-12 md:h-16 lg:h-20 w-auto object-contain"
-                        />
+                        {(() => {
+                          const raw = brand.logo_url || brand.logo || '';
+                          const src = raw
+                            ? (String(raw).startsWith('http') || String(raw).includes('/storage/v1/object/public/'))
+                              ? raw
+                              : fileService.getPublicUrl('brand-logos', raw)
+                            : '';
+                          return src ? (
+                            <img src={src} alt={`${brand.name} logo`} className="h-12 md:h-16 lg:h-20 w-auto object-contain" />
+                          ) : (
+                            <div className="h-12 md:h-16 lg:h-20 w-28 bg-gray-100 rounded" />
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -93,19 +134,13 @@ const BrandSlider = ({ brands }) => {
                     <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-8">
                       <div className="bg-white/95 backdrop-blur-md px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg">
                         <div className="flex items-baseline gap-1 md:gap-2">
-                          <span className="font-bold text-xl md:text-2xl lg:text-3xl text-primary-600">{brand.productCount}</span>
+                          <span className="font-bold text-xl md:text-2xl lg:text-3xl text-primary-600">{brandIdToProductCount.get(brand.id) || 0}</span>
                           <span className="text-xs md:text-sm text-gray-600 font-medium">Products</span>
-                        </div>
-                      </div>
-                      <div className="bg-white/95 backdrop-blur-md px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg">
-                        <div className="flex items-baseline gap-1 md:gap-2">
-                          <span className="font-bold text-xl md:text-2xl lg:text-3xl text-primary-600">{brand.founded}</span>
-                          <span className="text-xs md:text-sm text-gray-600 font-medium">Est.</span>
                         </div>
                       </div>
                       <div className="hidden sm:block bg-white/95 backdrop-blur-md px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg">
                         <div className="flex items-baseline gap-1 md:gap-2">
-                          <span className="font-bold text-xl md:text-2xl lg:text-3xl text-primary-600">{brand.categories.length}</span>
+                          <span className="font-bold text-xl md:text-2xl lg:text-3xl text-primary-600">{brandIdToCategoryCount.get(brand.id) || 0}</span>
                           <span className="text-xs md:text-sm text-gray-600 font-medium">Categories</span>
                         </div>
                       </div>
